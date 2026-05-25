@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --brand-dark:    #080D1A;
+  --brand-navy:    #0F1A35;
+  --brand-teal:    #06B6D4;
+  --brand-amber:   #F0ABFC;
+  --brand-blue:    #8B5CF6;
+  --brand-surface: #F0F9FF;
+}
+
+html,
+body {
+  background-color: var(--brand-dark);
+  color: var(--brand-surface);
+  font-family: 'DM Sans', sans-serif;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .receipt-print-target,
+  .receipt-print-target * {
+    visibility: visible;
+  }
+  .receipt-print-target {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    background: white;
+    color: black;
+    font-family: 'DM Mono', monospace;
+  }
+}

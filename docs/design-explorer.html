@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Senku POS — Design Explorer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand-dark:    #0F1F35;
+      --brand-navy:    #1A3355;
+      --brand-teal:    #0D9488;
+      --brand-amber:   #F59E0B;
+      --brand-blue:    #2563EB;
+      --brand-surface: #F8FAFC;
+      --brand-text:    #1E293B;
+      --brand-muted:   #64748B;
+      --brand-border:  #E2E8F0;
+      --brand-success: #22C55E;
+      --brand-error:   #EF4444;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #ECF0F5;
+      color: var(--brand-text);
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .shell { display: grid; grid-template-rows: 52px 1fr; height: 100vh; }
+
+    /* HEADER */
+    .hdr {
+      background: var(--brand-dark);
+      display: flex; align-items: center;
+      padding: 0 1.25rem; gap: 1.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      position: relative; z-index: 50;
+    }
+    .hdr-logo { font-family: 'DM Mono', monospace; font-size: 12px; color: white; letter-spacing: 0.05em; flex-shrink: 0; }
+    .hdr-logo em { color: var(--brand-teal); font-style: normal; }
+    .hdr-sep { width: 1px; height: 20px; background: rgba(255,255,255,0.12); flex-shrink: 0; }
+    .hdr-tagline { font-size: 11px; color: rgba(255,255,255,0.35); letter-spacing: 0.04em; flex-shrink: 0; }
+    .hdr-spacer { flex: 1; }
+    .hdr-tabs { display: flex; gap: 2px; }
+    .hdr-tab {
+      padding: 5px 14px; border-radius: 6px;
+      font-size: 12px; font-weight: 500;
+      color: rgba(255,255,255,0.45); cursor: pointer;
+      transition: all 0.15s; user-select: none;
+    }
+    .hdr-tab:hover { color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.06); }
+    .hdr-tab.on { color: var(--brand-teal); background: rgba(13,148,136,0.18); }
+
+    /* BODY */
+    .body { display: grid; grid-template-columns: 268px 1fr; height: calc(100vh - 52px); overflow: hidden; }
+
+    /* SIDEBAR */
+    .sidebar { background: white; border-right: 1px solid var(--brand-border); overflow-y: auto; padding: 1.25rem; }
+    .sb-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--brand-muted); margin: 0 0 0.625rem; }
+
+    .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1.5rem; }
+    .preset { border-radius: 10px; padding: 10px; cursor: pointer; border: 2px solid transparent; transition: all 0.18s; }
+    .preset:hover { transform: translateY(-1px); }
+    .preset.on { border-color: var(--brand-teal); box-shadow: 0 0 0 1px var(--brand-teal); }
+    .preset-dots { display: flex; gap: 4px; margin-bottom: 6px; }
+    .preset-dot { width: 14px; height: 14px; border-radius: 50%; }
+    .preset-name { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; }
+
+    .token-list { display: flex; flex-direction: column; gap: 6px; }
+    .token-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--brand-border); transition: border-color 0.15s; }
+    .token-row:hover { border-color: var(--brand-teal); }
+    .token-swatch { width: 32px; height: 32px; border-radius: 6px; border: none; cursor: pointer; padding: 0; appearance: none; -webkit-appearance: none; flex-shrink: 0; outline: none; }
+    .token-meta { flex: 1; min-width: 0; }
+    .token-name { font-size: 11px; font-weight: 600; color: var(--brand-text); }
+    .token-val { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--brand-muted); margin-top: 1px; }
+
+    .sidebar-divider { height: 1px; background: var(--brand-border); margin: 1.25rem 0; }
+
+    .export-box { background: var(--brand-surface); border-radius: 8px; padding: 10px; border: 1px solid var(--brand-border); }
+    .export-pre { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--brand-muted); white-space: pre-wrap; word-break: break-all; line-height: 1.6; }
+    .export-btn { width: 100%; margin-top: 8px; padding: 6px; border-radius: 6px; border: 1px solid var(--brand-border); background: white; font-size: 11px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; color: var(--brand-text); transition: all 0.15s; }
+    .export-btn:hover { background: var(--brand-teal); color: white; border-color: var(--brand-teal); }
+
+    /* MAIN */
+    .main { overflow-y: auto; padding: 1.5rem; }
+    .tab-section { display: none; }
+    .tab-section.on { display: block; }
+    .page-title { font-size: 20px; font-weight: 700; color: var(--brand-text); margin-bottom: 4px; }
+    .page-sub { font-size: 13px; color: var(--brand-muted); margin-bottom: 1.25rem; }
+
+    /* SCREEN TABS */
+    .screen-tabs { display: flex; gap: 6px; margin-bottom: 1.25rem; }
+    .screen-tab { padding: 6px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1.5px solid var(--brand-border); background: white; color: var(--brand-muted); transition: all 0.15s; user-select: none; }
+    .screen-tab:hover { border-color: var(--brand-teal); color: var(--brand-teal); }
+    .screen-tab.on { background: var(--brand-teal); border-color: var(--brand-teal); color: white; }
+    .screen-frame { background: white; border-radius: 14px; border: 1px solid var(--brand-border); overflow: hidden; box-shadow: 0 4px 32px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06); }
+    .screen { display: none; }
+    .screen.on { display: block; }
+
+    /* COMANDEO */
+    .cmdo { height: 580px; display: grid; grid-template-columns: 200px 1fr 252px; grid-template-rows: 46px 1fr; background: var(--brand-surface); font-size: 12.5px; }
+    .cmdo-bar { grid-column: 1 / -1; background: var(--brand-dark); display: flex; align-items: center; padding: 0 14px; gap: 10px; }
+    .cmdo-bar-logo { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--brand-teal); letter-spacing: 0.06em; }
+    .cmdo-bar-loc { font-size: 11px; color: rgba(255,255,255,0.4); }
+    .cmdo-bar-sp { flex: 1; }
+    .cmdo-bar-chip { padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; background: rgba(13,148,136,0.2); color: var(--brand-teal); }
+    .cmdo-bar-time { font-family: 'DM Mono', monospace; font-size: 12px; color: rgba(255,255,255,0.6); }
+    .cmdo-bar-user { font-size: 10px; color: rgba(255,255,255,0.45); background: rgba(255,255,255,0.07); padding: 3px 10px; border-radius: 20px; }
+    .cmdo-tables { background: var(--brand-navy); padding: 12px 10px; overflow-y: auto; }
+    .cmdo-section-lbl { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.25); margin-bottom: 8px; }
+    .cmdo-tgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .cmdo-tc { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 8px 7px; cursor: pointer; transition: all 0.12s; }
+    .cmdo-tc:hover { background: rgba(255,255,255,0.1); }
+    .cmdo-tc.sel { background: rgba(13,148,136,0.18); border-color: var(--brand-teal); }
+    .cmdo-tc.occ { border-color: rgba(245,158,11,0.35); }
+    .cmdo-tc.urg { border-color: rgba(239,68,68,0.4); }
+    .cmdo-tc-name { font-family: 'DM Mono', monospace; font-size: 11px; color: white; margin-bottom: 3px; }
+    .cmdo-tc-st { font-size: 9px; display: flex; align-items: center; gap: 4px; }
+    .cmdo-tc-dot { width: 5px; height: 5px; border-radius: 50%; display: inline-block; }
+    .cmdo-tc-st-libre { color: var(--brand-success); }
+    .cmdo-tc-st-ocupada { color: var(--brand-amber); }
+    .cmdo-tc-st-urgente { color: var(--brand-error); }
+    .cmdo-tc-total { font-family: 'DM Mono', monospace; font-size: 9px; color: rgba(255,255,255,0.28); margin-top: 4px; }
+    .cmdo-menu { display: flex; flex-direction: column; padding: 10px; overflow: hidden; }
+    .cmdo-cats { display: flex; gap: 5px; margin-bottom: 10px; overflow-x: auto; }
+    .cmdo-cat { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; cursor: pointer; background: white; color: var(--brand-muted); border: 1px solid var(--brand-border); }
+    .cmdo-cat.on { background: var(--brand-teal); color: white; border-color: transparent; }
+    .cmdo-items { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; overflow-y: auto; flex: 1; }
+    .cmdo-item { background: white; border: 1px solid var(--brand-border); border-radius: 9px; padding: 11px 9px; cursor: pointer; transition: all 0.12s; }
+    .cmdo-item:hover { border-color: var(--brand-teal); box-shadow: 0 2px 10px rgba(13,148,136,0.14); }
+    .cmdo-item-name { font-size: 11.5px; font-weight: 600; color: var(--brand-text); margin-bottom: 4px; line-height: 1.3; }
+    .cmdo-item-price { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--brand-teal); font-weight: 500; }
+    .cmdo-item-prep { font-size: 9px; color: var(--brand-muted); margin-top: 3px; }
+    .cmdo-order { background: white; border-left: 1px solid var(--brand-border); display: flex; flex-direction: column; }
+    .cmdo-ord-hdr { padding: 11px 13px; border-bottom: 1px solid var(--brand-border); display: flex; align-items: center; justify-content: space-between; }
+    .cmdo-ord-title { font-size: 12px; font-weight: 700; color: var(--brand-text); }
+    .cmdo-ord-badge { background: var(--brand-teal); color: white; font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+    .cmdo-ord-items { flex: 1; overflow-y: auto; padding: 8px 13px; }
+    .cmdo-ord-row { display: flex; align-items: center; gap: 7px; padding: 7px 0; border-bottom: 1px solid var(--brand-border); }
+    .cmdo-ord-row:last-child { border-bottom: none; }
+    .cmdo-ord-qty { width: 20px; height: 20px; background: var(--brand-surface); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 700; color: var(--brand-dark); flex-shrink: 0; }
+    .cmdo-ord-iname { flex: 1; font-size: 11px; color: var(--brand-text); }
+    .cmdo-ord-iprice { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--brand-muted); }
+    .cmdo-ord-foot { padding: 11px 13px; border-top: 1px solid var(--brand-border); }
+    .cmdo-ord-line { display: flex; justify-content: space-between; font-size: 11px; color: var(--brand-muted); margin-bottom: 3px; }
+    .cmdo-ord-total { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; color: var(--brand-text); padding-top: 7px; border-top: 1px solid var(--brand-border); margin: 6px 0 10px; }
+    .cmdo-ord-total-val { font-family: 'DM Mono', monospace; color: var(--brand-teal); }
+    .btn-send { width: 100%; background: var(--brand-teal); color: white; border: none; border-radius: 8px; padding: 9px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; letter-spacing: 0.02em; }
+
+    /* KDS */
+    .kds { height: 580px; background: #080F1C; display: grid; grid-template-rows: 48px 1fr; font-size: 12.5px; }
+    .kds-bar { display: flex; align-items: center; padding: 0 16px; gap: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .kds-bar-logo { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--brand-teal); letter-spacing: 0.08em; }
+    .kds-bar-sep { font-size: 11px; color: rgba(255,255,255,0.15); }
+    .kds-bar-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.35); }
+    .kds-bar-sp { flex: 1; }
+    .kds-bar-online { display: flex; align-items: center; gap: 5px; font-size: 10px; color: rgba(255,255,255,0.35); }
+    .kds-online-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brand-success); animation: blink 2s infinite; }
+    @keyframes blink { 0%,100%{opacity:1}50%{opacity:0.35} }
+    .kds-bar-time { font-family: 'DM Mono', monospace; font-size: 14px; color: rgba(255,255,255,0.5); }
+    .kds-cols { display: grid; grid-template-columns: 1fr 1fr 1fr; border-top: 1px solid rgba(255,255,255,0.04); overflow: hidden; }
+    .kds-col { padding: 12px; overflow-y: auto; border-right: 1px solid rgba(255,255,255,0.04); }
+    .kds-col:last-child { border-right: none; }
+    .kds-col-hdr { display: flex; align-items: center; gap: 7px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .kds-col-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .kds-col-lbl { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+    .kds-col-cnt { margin-left: auto; font-family: 'DM Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.25); }
+    .kds-card { background: #ffffff; border: 1px solid #D1D9E6; border-top: 4px solid var(--brand-amber); border-radius: 10px; padding: 11px; margin-bottom: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+    .kds-card.pend { border-top-color: var(--brand-amber); }
+    .kds-card.prog { border-top-color: var(--brand-blue); }
+    .kds-card.rdy  { border-top-color: var(--brand-success); }
+    .kds-card.warn { border-top-color: #EF4444 !important; background: #FFF5F5; }
+    .kds-card.dim  { opacity: 0.65; }
+    .kds-card-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; }
+    .kds-card-table { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; color: var(--brand-text); }
+    .kds-timer { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px; }
+    .kds-timer-g { background: rgba(34,197,94,0.14); color: var(--brand-success); }
+    .kds-timer-y { background: rgba(245,158,11,0.14); color: var(--brand-amber); }
+    .kds-card-items { display: flex; flex-direction: column; gap: 5px; }
+    .kds-card-item { display: flex; gap: 8px; align-items: baseline; }
+    .kds-item-qty { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--brand-teal); min-width: 18px; }
+    .kds-item-name { font-size: 12px; color: var(--brand-text); }
+    .kds-item-note { font-size: 10px; color: var(--brand-muted); font-style: italic; }
+    .kds-card-btn { width: 100%; margin-top: 10px; padding: 6px; border-radius: 6px; border: 1px solid var(--brand-border); background: var(--brand-surface); color: var(--brand-muted); font-size: 10px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; letter-spacing: 0.04em; transition: all 0.15s; }
+    .kds-card-btn:hover { border-color: var(--brand-teal); color: var(--brand-teal); background: rgba(13,148,136,0.06); }
+    .kds-card-btn.ready { border-color: var(--brand-success); color: var(--brand-success); background: rgba(34,197,94,0.08); }
+    .kds-card-btn.done { border-color: var(--brand-success); color: var(--brand-success); }
+
+    /* DASHBOARD */
+    .dash { height: 580px; background: var(--brand-surface); display: grid; grid-template-rows: 46px 1fr; font-size: 12.5px; }
+    .dash-bar { background: white; border-bottom: 1px solid var(--brand-border); display: flex; align-items: center; padding: 0 16px; gap: 14px; }
+    .dash-bar-logo { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500; color: var(--brand-text); }
+    .dash-bar-logo em { color: var(--brand-teal); font-style: normal; }
+    .dash-nav { display: flex; gap: 3px; }
+    .dash-nav-item { padding: 4px 11px; border-radius: 6px; font-size: 11px; font-weight: 500; color: var(--brand-muted); cursor: pointer; }
+    .dash-nav-item.on { background: var(--brand-surface); color: var(--brand-text); font-weight: 600; }
+    .dash-bar-sp { flex: 1; }
+    .dash-bar-date { font-size: 10px; color: var(--brand-muted); }
+    .dash-bar-user { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: var(--brand-text); }
+    .dash-bar-avatar { width: 24px; height: 24px; background: var(--brand-teal); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; color: white; font-weight: 700; }
+    .dash-body { display: grid; grid-template-columns: 1fr 268px; grid-template-rows: auto 1fr; gap: 12px; padding: 14px; overflow: hidden; }
+    .dash-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .dash-metric { background: white; border-radius: 10px; border: 1px solid var(--brand-border); padding: 12px 14px; }
+    .dash-metric-lbl { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--brand-muted); margin-bottom: 5px; }
+    .dash-metric-val { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500; color: var(--brand-text); line-height: 1; margin-bottom: 4px; }
+    .dash-metric-delta { font-size: 10px; font-weight: 600; color: var(--brand-success); }
+    .dash-metric-delta.neg { color: var(--brand-error); }
+    .dash-chart { background: white; border-radius: 10px; border: 1px solid var(--brand-border); padding: 14px; overflow: hidden; }
+    .dash-chart-hdr { display: flex; align-items: baseline; gap: 8px; margin-bottom: 14px; }
+    .dash-chart-title { font-size: 12px; font-weight: 700; color: var(--brand-text); }
+    .dash-chart-sub { font-size: 10px; color: var(--brand-muted); }
+    .dash-bars { display: flex; align-items: flex-end; gap: 5px; height: 108px; }
+    .dash-bg { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+    .dash-bar-el { width: 100%; border-radius: 4px 4px 0 0; background: var(--brand-teal); opacity: 0.8; }
+    .dash-bar-el.hi { opacity: 1; }
+    .dash-bar-lbl { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--brand-muted); }
+    .dash-right { display: flex; flex-direction: column; gap: 10px; grid-row: 1 / -1; overflow: hidden; }
+    .dash-widget { background: white; border-radius: 10px; border: 1px solid var(--brand-border); padding: 12px; }
+    .dash-widget-title { font-size: 11px; font-weight: 700; color: var(--brand-text); margin-bottom: 10px; }
+    .dash-ord-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--brand-border); }
+    .dash-ord-row:last-child { border-bottom: none; }
+    .dash-ord-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .dash-ord-info { flex: 1; }
+    .dash-ord-name { font-size: 11px; font-weight: 600; color: var(--brand-text); }
+    .dash-ord-meta { font-size: 9px; color: var(--brand-muted); margin-top: 1px; }
+    .dash-ord-amt { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--brand-text); }
+    .dash-chef { background: var(--brand-dark); border-radius: 10px; padding: 12px; }
+    .dash-chef-hdr { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .dash-chef-icon { width: 28px; height: 28px; border-radius: 7px; background: var(--brand-teal); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+    .dash-chef-name { font-size: 12px; font-weight: 700; color: white; }
+    .dash-chef-sub { font-size: 9px; color: rgba(255,255,255,0.35); margin-top: 1px; }
+    .dash-chef-chip { margin-left: auto; padding: 2px 8px; border-radius: 20px; font-size: 9px; font-weight: 700; background: rgba(245,158,11,0.2); color: var(--brand-amber); }
+    .dash-chef-msg { background: rgba(255,255,255,0.06); border-radius: 8px; padding: 10px; font-size: 11px; color: rgba(255,255,255,0.72); line-height: 1.55; margin-bottom: 8px; }
+    .dash-chef-inp { display: flex; gap: 5px; }
+    .dash-chef-field { flex: 1; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 6px 10px; font-size: 10px; color: white; font-family: 'DM Sans', sans-serif; outline: none; }
+    .dash-chef-send { background: var(--brand-teal); border: none; border-radius: 6px; padding: 6px 10px; cursor: pointer; color: white; font-size: 13px; }
+
+    /* CAJERO */
+    .cajero { height: 580px; background: var(--brand-surface); display: grid; grid-template-rows: 52px 1fr; font-size: 12.5px; }
+    .caj-bar { background: var(--brand-dark); display: flex; align-items: center; padding: 0 16px; gap: 12px; }
+    .caj-back { color: rgba(255,255,255,0.5); font-size: 12px; cursor: pointer; }
+    .caj-bar-divider { width: 1px; height: 18px; background: rgba(255,255,255,0.1); }
+    .caj-title { font-size: 13px; font-weight: 700; color: white; }
+    .caj-meta { font-size: 10px; color: rgba(255,255,255,0.4); }
+    .caj-bar-sp { flex: 1; }
+    .caj-cancel { padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: rgba(255,255,255,0.5); cursor: pointer; font-family: 'DM Sans', sans-serif; }
+    .caj-body { display: grid; grid-template-columns: 1fr 272px; overflow: hidden; }
+    .caj-left { padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+    .caj-section { background: white; border-radius: 12px; border: 1px solid var(--brand-border); padding: 14px; }
+    .caj-section-title { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--brand-muted); margin-bottom: 12px; }
+    .caj-item-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--brand-border); }
+    .caj-item-row:last-child { border-bottom: none; }
+    .caj-item-qty { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 700; color: var(--brand-teal); min-width: 24px; }
+    .caj-item-name { flex: 1; font-size: 12px; color: var(--brand-text); }
+    .caj-item-price { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--brand-text); }
+    .caj-totals { margin-top: 10px; }
+    .caj-total-line { display: flex; justify-content: space-between; font-size: 11px; color: var(--brand-muted); margin-bottom: 4px; }
+    .caj-total-main { display: flex; justify-content: space-between; font-size: 15px; font-weight: 700; color: var(--brand-text); padding-top: 8px; border-top: 2px solid var(--brand-border); margin-top: 6px; }
+    .caj-total-amt { font-family: 'DM Mono', monospace; color: var(--brand-teal); }
+    .caj-loyalty { background: var(--brand-dark); border-radius: 12px; padding: 14px; }
+    .caj-loy-hdr { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .caj-loy-icon { width: 28px; height: 28px; border-radius: 7px; background: var(--brand-teal); display: flex; align-items: center; justify-content: center; font-size: 13px; }
+    .caj-loy-name { font-size: 12px; font-weight: 700; color: white; }
+    .caj-loy-phone { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 1px; }
+    .caj-loy-pts { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .caj-loy-pt-group { text-align: center; flex: 1; }
+    .caj-loy-pt-val { font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 500; color: var(--brand-amber); }
+    .caj-loy-pt-new { font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 500; color: var(--brand-teal); }
+    .caj-loy-pt-lbl { font-size: 9px; color: rgba(255,255,255,0.35); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.08em; }
+    .caj-loy-sep { font-size: 16px; color: rgba(255,255,255,0.2); }
+    .caj-loy-btn { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid rgba(245,158,11,0.4); background: rgba(245,158,11,0.1); color: var(--brand-amber); font-size: 11px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; }
+    .caj-right { background: white; border-left: 1px solid var(--brand-border); padding: 16px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+    .caj-pay-methods { display: flex; gap: 6px; }
+    .caj-pay-btn { flex: 1; padding: 9px 4px; border-radius: 9px; border: 2px solid var(--brand-border); background: white; font-size: 10px; font-weight: 700; color: var(--brand-muted); cursor: pointer; font-family: 'DM Sans', sans-serif; text-align: center; transition: all 0.15s; }
+    .caj-pay-btn.on { border-color: var(--brand-teal); color: var(--brand-teal); background: rgba(13,148,136,0.07); }
+    .caj-total-display { text-align: center; padding: 8px 0; border-top: 1px solid var(--brand-border); border-bottom: 1px solid var(--brand-border); }
+    .caj-total-display-lbl { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--brand-muted); margin-bottom: 3px; }
+    .caj-total-display-val { font-family: 'DM Mono', monospace; font-size: 26px; font-weight: 500; color: var(--brand-text); }
+    .caj-input-lbl { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--brand-muted); margin-bottom: 6px; }
+    .caj-amount-inp { width: 100%; padding: 10px 12px; border-radius: 9px; border: 2px solid var(--brand-border); font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 500; color: var(--brand-text); text-align: right; outline: none; background: var(--brand-surface); }
+    .caj-change { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: rgba(34,197,94,0.07); border-radius: 9px; border: 1px solid rgba(34,197,94,0.2); }
+    .caj-change-lbl { font-size: 11px; color: var(--brand-text); font-weight: 500; }
+    .caj-change-val { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 700; color: var(--brand-success); }
+    .caj-factura-row { display: flex; align-items: center; gap: 8px; padding: 9px 12px; background: var(--brand-surface); border-radius: 9px; border: 1px solid var(--brand-border); }
+    .caj-factura-lbl { flex: 1; font-size: 11px; color: var(--brand-text); font-weight: 500; }
+    .caj-factura-toggle { width: 36px; height: 20px; background: var(--brand-teal); border-radius: 10px; position: relative; flex-shrink: 0; }
+    .caj-factura-knob { width: 16px; height: 16px; background: white; border-radius: 50%; position: absolute; top: 2px; right: 2px; }
+    .btn-cobrar { width: 100%; padding: 14px; border-radius: 10px; border: none; background: var(--brand-teal); color: white; font-size: 14px; font-weight: 800; font-family: 'DM Sans', sans-serif; cursor: pointer; letter-spacing: 0.02em; margin-top: auto; }
+
+    /* COMANDEO v2 — Two-phase UX */
+    .cmdo2 { height: 580px; font-size: 12.5px; }
+    .cmdo2-view { height: 580px; display: none; flex-direction: column; }
+    .cmdo2-view.on { display: flex; }
+    .cmdo2-floor { background: var(--brand-dark); }
+    .cmdo2-topbar { display: flex; align-items: center; padding: 0 16px; gap: 10px; height: 48px; flex-shrink: 0; }
+    .cmdo2-logo { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--brand-teal); letter-spacing: 0.06em; }
+    .cmdo2-loc { font-size: 10px; color: rgba(255,255,255,0.35); }
+    .cmdo2-sp { flex: 1; }
+    .cmdo2-chip { padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; background: rgba(13,148,136,0.2); color: var(--brand-teal); }
+    .cmdo2-clock { font-family: 'DM Mono', monospace; font-size: 12px; color: rgba(255,255,255,0.6); }
+    .cmdo2-user { font-size: 10px; color: rgba(255,255,255,0.45); background: rgba(255,255,255,0.07); padding: 3px 10px; border-radius: 20px; }
+    .floor-filter { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: rgba(0,0,0,0.2); flex-shrink: 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .floor-filter-btn { padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; border: 1px solid rgba(255,255,255,0.12); background: transparent; color: rgba(255,255,255,0.4); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
+    .floor-filter-btn.on { background: rgba(13,148,136,0.2); border-color: var(--brand-teal); color: var(--brand-teal); }
+    .floor-new-btn { margin-left: auto; padding: 5px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.6); cursor: pointer; font-family: 'DM Sans', sans-serif; }
+    .floor-canvas { flex: 1; position: relative; overflow: hidden; background: linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px); background-size: 40px 40px; background-color: #F8F9FB; }
+    .ftable-wrap { position: absolute; }
+    .ftable-inner { display: flex; flex-direction: column; align-items: center; transform: translate(-50%, -50%); transition: transform 0.15s; cursor: pointer; user-select: none; }
+    .ftable-inner:hover { transform: translate(-50%, -50%) scale(1.08); }
+    .ftable-icon { position: relative; width: 72px; height: 72px; overflow: visible; }
+    .ftable-top { position: absolute; inset: 0; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 700; }
+    .ftable-wrap.libre .ftable-top { background: #22C55E; color: #fff; box-shadow: 0 3px 10px rgba(34,197,94,0.35); }
+    .ftable-wrap.occ   .ftable-top { background: #F59E0B; color: #fff; box-shadow: 0 3px 10px rgba(245,158,11,0.40); }
+    .ftable-wrap.urg   .ftable-top { background: #EF4444; color: #fff; box-shadow: 0 3px 10px rgba(239,68,68,0.40); }
+    .fchair { position: absolute; border-radius: 50%; }
+    .ftable-wrap.libre .fchair { background: #86EFAC; }
+    .ftable-wrap.occ   .fchair { background: #FCD34D; }
+    .ftable-wrap.urg   .fchair { background: #FCA5A5; }
+    .ftable-label { margin-top: 30px; text-align: center; }
+    .ftable-name { font-family: 'DM Mono', monospace; font-size: 11px; color: #4B5563; }
+    .ftable-timer { font-family: 'DM Mono', monospace; font-size: 9px; margin-top: 2px; }
+    .ftable-wrap.occ .ftable-timer { color: #D97706; }
+    .ftable-wrap.urg .ftable-timer { color: #DC2626; }
+    .ftable-amount { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 600; margin-top: 1px; }
+    .ftable-wrap.occ .ftable-amount { color: #D97706; }
+    .ftable-wrap.urg .ftable-amount { color: #DC2626; }
+    .ftable-waiter { font-size: 9px; color: #9CA3AF; margin-top: 1px; }
+    .floor-zone-lbl { position: absolute; font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #111827; pointer-events: none; }
+    .cmdo2-order { background: var(--brand-surface); }
+    .ord-header { display: flex; align-items: center; gap: 10px; padding: 0 14px; height: 48px; background: var(--brand-dark); flex-shrink: 0; }
+    .ord-back { font-size: 12px; color: rgba(255,255,255,0.5); cursor: pointer; }
+    .ord-sep { width: 1px; height: 18px; background: rgba(255,255,255,0.1); }
+    .ord-mesa { font-size: 13px; font-weight: 700; color: white; }
+    .ord-meta { font-size: 10px; color: rgba(255,255,255,0.35); }
+    .ord-hsp { flex: 1; }
+    .ord-act-btn { padding: 5px 10px; border-radius: 6px; font-size: 10px; font-weight: 600; border: 1px solid rgba(255,255,255,0.14); background: transparent; color: rgba(255,255,255,0.5); cursor: pointer; font-family: 'DM Sans', sans-serif; }
+    .ord-cobrar-btn { padding: 5px 14px; border-radius: 6px; font-size: 11px; font-weight: 700; border: none; background: var(--brand-teal); color: white; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+    .ord-body { flex: 1; display: grid; grid-template-columns: 1fr 248px; overflow: hidden; }
+    .ord-menu { display: flex; flex-direction: column; padding: 10px; overflow: hidden; border-right: 1px solid var(--brand-border); background: white; }
+    .ord-cats { display: flex; gap: 5px; margin-bottom: 10px; overflow-x: auto; flex-shrink: 0; }
+    .ord-cat { padding: 5px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; cursor: pointer; background: var(--brand-surface); color: var(--brand-muted); border: 1px solid var(--brand-border); }
+    .ord-cat.on { background: var(--brand-teal); color: white; border-color: transparent; }
+    .ord-items { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; overflow-y: auto; flex: 1; }
+    .ord-item { background: var(--brand-surface); border: 1px solid var(--brand-border); border-radius: 9px; padding: 11px 9px; cursor: pointer; transition: all 0.12s; }
+    .ord-item:hover { border-color: var(--brand-teal); box-shadow: 0 2px 10px rgba(13,148,136,0.14); background: white; }
+    .ord-item-name { font-size: 11.5px; font-weight: 600; color: var(--brand-text); margin-bottom: 5px; line-height: 1.3; }
+    .ord-item-price { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--brand-teal); font-weight: 500; }
+    .ord-item-prep { font-size: 9px; color: var(--brand-muted); margin-top: 3px; }
+    .ord-summary { display: flex; flex-direction: column; background: white; }
+    .ord-sum-hdr { padding: 11px 13px; border-bottom: 1px solid var(--brand-border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .ord-sum-title { font-size: 12px; font-weight: 700; color: var(--brand-text); }
+    .ord-sum-timer { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--brand-muted); }
+    .ord-sum-items { flex: 1; overflow-y: auto; padding: 8px 13px; }
+    .ord-sum-row { display: flex; align-items: center; gap: 7px; padding: 7px 0; border-bottom: 1px solid var(--brand-border); }
+    .ord-sum-row:last-child { border-bottom: none; }
+    .ord-sum-qty { width: 20px; height: 20px; background: rgba(13,148,136,0.1); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 700; color: var(--brand-teal); flex-shrink: 0; }
+    .ord-sum-iname { flex: 1; font-size: 11px; color: var(--brand-text); }
+    .ord-sum-iprice { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--brand-muted); }
+    .ord-sum-foot { padding: 11px 13px; border-top: 1px solid var(--brand-border); flex-shrink: 0; }
+    .ord-sum-line { display: flex; justify-content: space-between; font-size: 11px; color: var(--brand-muted); margin-bottom: 3px; }
+    .ord-sum-total { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; color: var(--brand-text); padding-top: 7px; border-top: 1px solid var(--brand-border); margin: 6px 0 10px; }
+    .ord-sum-total-val { font-family: 'DM Mono', monospace; color: var(--brand-teal); }
+    .btn-send-kds { width: 100%; background: var(--brand-dark); color: white; border: none; border-radius: 8px; padding: 9px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+
+    /* PALETTE TAB */
+    .pal-card { background: white; border-radius: 12px; border: 1px solid var(--brand-border); padding: 1.25rem; margin-bottom: 1rem; }
+    .pal-card-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--brand-muted); margin-bottom: 1rem; }
+    .pal-swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+    .pal-swatch-wrap { text-align: center; }
+    .pal-swatch-box { height: 72px; border-radius: 10px; margin-bottom: 7px; border: 1px solid rgba(0,0,0,0.06); }
+    .pal-swatch-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--brand-muted); }
+    .pal-swatch-val { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--brand-muted); margin-top: 1px; }
+    .pal-status { display: flex; gap: 10px; flex-wrap: wrap; }
+    .pal-st-chip { display: flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 8px; font-size: 11px; font-weight: 700; }
+    .pal-st-dot { width: 9px; height: 9px; border-radius: 50%; }
+
+    /* COMPONENTS */
+    .comp-card { background: white; border-radius: 12px; border: 1px solid var(--brand-border); padding: 1.25rem; margin-bottom: 1rem; }
+    .comp-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--brand-muted); padding-bottom: 10px; border-bottom: 1px solid var(--brand-border); margin-bottom: 1rem; }
+    .comp-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
+    .comp-row:last-child { margin-bottom: 0; }
+    .btn { padding: 8px 18px; border-radius: 8px; font-size: 12.5px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; border: none; transition: all 0.15s; }
+    .btn-teal { background: var(--brand-teal); color: white; }
+    .btn-outline-teal { background: transparent; border: 1.5px solid var(--brand-teal); color: var(--brand-teal); }
+    .btn-dk { background: var(--brand-dark); color: white; }
+    .btn-amb { background: var(--brand-amber); color: white; }
+    .btn-dng { background: var(--brand-error); color: white; }
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .bdg-teal  { background: rgba(13,148,136,0.12);  color: var(--brand-teal); }
+    .bdg-amber { background: rgba(245,158,11,0.12);  color: var(--brand-amber); }
+    .bdg-green { background: rgba(34,197,94,0.12);   color: var(--brand-success); }
+    .bdg-red   { background: rgba(239,68,68,0.12);   color: var(--brand-error); }
+    .bdg-dark  { background: rgba(15,31,53,0.08);    color: var(--brand-dark); }
+    .bdg-blue  { background: rgba(37,99,235,0.12);   color: var(--brand-blue); }
+    .inp-base { padding: 8px 12px; border-radius: 8px; border: 1.5px solid var(--brand-border); font-size: 12.5px; font-family: 'DM Sans', sans-serif; color: var(--brand-text); outline: none; transition: border-color 0.15s; width: 180px; }
+    .inp-base:focus { border-color: var(--brand-teal); }
+    .mesa-demo { background: var(--brand-navy); border-radius: 10px; padding: 12px; width: 110px; cursor: pointer; border: 2px solid transparent; }
+    .mesa-demo.sel { border-color: var(--brand-teal); }
+    .mesa-demo.urg { border-color: rgba(239,68,68,0.45); }
+    .mesa-demo-name { font-family: 'DM Mono', monospace; font-size: 11px; color: white; }
+    .mesa-demo-st { font-size: 9px; margin-top: 3px; display: flex; align-items: center; gap: 4px; }
+    .mesa-demo-dot { width: 5px; height: 5px; border-radius: 50%; display: inline-block; }
+    .mesa-demo-total { font-family: 'DM Mono', monospace; font-size: 9px; color: rgba(255,255,255,0.28); margin-top: 6px; }
+
+    /* TYPOGRAPHY */
+    .type-card { background: white; border-radius: 12px; border: 1px solid var(--brand-border); padding: 1.5rem; margin-bottom: 1rem; }
+    .type-row { margin-bottom: 1.25rem; border-bottom: 1px solid var(--brand-border); padding-bottom: 1.25rem; }
+    .type-row:last-child { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
+    .type-meta { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--brand-muted); margin-bottom: 5px; }
+    .t-display { font-size: 46px; font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; color: var(--brand-text); }
+    .t-h1 { font-size: 28px; font-weight: 700; line-height: 1.2; color: var(--brand-text); }
+    .t-h2 { font-size: 18px; font-weight: 600; color: var(--brand-text); }
+    .t-body { font-size: 14px; line-height: 1.65; color: var(--brand-text); }
+    .t-small { font-size: 12px; color: var(--brand-muted); }
+    .t-mono-lg { font-family: 'DM Mono', monospace; font-size: 28px; font-weight: 500; letter-spacing: -0.02em; color: var(--brand-text); }
+    .t-mono-md { font-family: 'DM Mono', monospace; font-size: 14px; color: var(--brand-teal); }
+    .kds-timers { display: flex; gap: 14px; margin-top: 4px; }
+    .kds-t { font-family: 'DM Mono', monospace; font-size: 24px; font-weight: 500; }
+
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--brand-border); border-radius: 2px; }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- HEADER -->
+  <header class="hdr">
+    <div class="hdr-logo">SENKU<em>POS</em></div>
+    <div class="hdr-sep"></div>
+    <div class="hdr-tagline">Design Explorer</div>
+    <div class="hdr-spacer"></div>
+    <nav class="hdr-tabs">
+      <div class="hdr-tab on"  data-tab="palette"    onclick="switchTab(this)">Colores</div>
+      <div class="hdr-tab"     data-tab="screens"    onclick="switchTab(this)">Pantallas</div>
+      <div class="hdr-tab"     data-tab="components" onclick="switchTab(this)">Componentes</div>
+      <div class="hdr-tab"     data-tab="typography" onclick="switchTab(this)">Tipografía</div>
+    </nav>
+  </header>
+
+  <div class="body">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sb-label" style="margin-top:0">Temas</div>
+      <div class="preset-grid">
+        <div class="preset on" data-theme="dark" onclick="applyTheme(this)" style="background:#0F1F35">
+          <div class="preset-dots">
+            <div class="preset-dot" style="background:#0D9488"></div>
+            <div class="preset-dot" style="background:#F59E0B"></div>
+            <div class="preset-dot" style="background:#2563EB"></div>
+          </div>
+          <div class="preset-name" style="color:rgba(255,255,255,0.7)">Dark Precision</div>
+        </div>
+        <div class="preset" data-theme="light" onclick="applyTheme(this)" style="background:#fff;border:1px solid #E2E8F0">
+          <div class="preset-dots">
+            <div class="preset-dot" style="background:#0D9488"></div>
+            <div class="preset-dot" style="background:#334155"></div>
+            <div class="preset-dot" style="background:#F59E0B"></div>
+          </div>
+          <div class="preset-name" style="color:#475569">Light Modern</div>
+        </div>
+        <div class="preset" data-theme="warm" onclick="applyTheme(this)" style="background:#2D1B0E">
+          <div class="preset-dots">
+            <div class="preset-dot" style="background:#D97706"></div>
+            <div class="preset-dot" style="background:#92400E"></div>
+            <div class="preset-dot" style="background:#FBBF24"></div>
+          </div>
+          <div class="preset-name" style="color:rgba(255,255,255,0.7)">Café Tico</div>
+        </div>
+        <div class="preset" data-theme="ocean" onclick="applyTheme(this)" style="background:#080D1A">
+          <div class="preset-dots">
+            <div class="preset-dot" style="background:#06B6D4"></div>
+            <div class="preset-dot" style="background:#8B5CF6"></div>
+            <div class="preset-dot" style="background:#F0ABFC"></div>
+          </div>
+          <div class="preset-name" style="color:rgba(255,255,255,0.7)">Noche Digital</div>
+        </div>
+      </div>
+
+      <div class="sidebar-divider"></div>
+      <div class="sb-label">Tokens de Color</div>
+      <div class="token-list">
+        <div class="token-row">
+          <input type="color" class="token-swatch" id="tok-dark" value="#0F1F35" data-var="--brand-dark" oninput="updateToken(this)">
+          <div class="token-meta">
+            <div class="token-name">Brand Dark</div>
+            <div class="token-val" id="val-dark">#0F1F35</div>
+          </div>
+        </div>
+        <div class="token-row">
+          <input type="color" class="token-swatch" id="tok-navy" value="#1A3355" data-var="--brand-navy" oninput="updateToken(this)">
+          <div class="token-meta">
+            <div class="token-name">Brand Navy</div>
+            <div class="token-val" id="val-navy">#1A3355</div>
+          </div>
+        </div>
+        <div class="token-row">
+          <input type="color" class="token-swatch" id="tok-teal" value="#0D9488" data-var="--brand-teal" oninput="updateToken(this)">
+          <div class="token-meta">
+            <div class="token-name">Primary · Teal</div>
+            <div class="token-val" id="val-teal">#0D9488</div>
+          </div>
+        </div>
+        <div class="token-row">
+          <input type="color" class="token-swatch" id="tok-amber" value="#F59E0B" data-var="--brand-amber" oninput="updateToken(this)">
+          <div class="token-meta">
+            <div class="token-name">Amber · Alertas</div>
+            <div class="token-val" id="val-amber">#F59E0B</div>
+          </div>
+        </div>
+        <div class="token-row">
+          <input type="color" class="token-swatch" id="tok-blue" value="#2563EB" data-var="--brand-blue" oninput="updateToken(this)">
+          <div class="token-meta">
+            <div class="token-name">Blue · En preparación</div>
+            <div class="token-val" id="val-blue">#2563EB</div>
+          </div>
+        </div>
+        <div class="token-row">
+          <input type="color" class="token-swatch" id="tok-surface" value="#F8FAFC" data-var="--brand-surface" oninput="updateToken(this)">
+          <div class="token-meta">
+            <div class="token-name">Surface · Fondo</div>
+            <div class="token-val" id="val-surface">#F8FAFC</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-divider"></div>
+      <div class="sb-label">CSS Variables</div>
+      <div class="export-box">
+        <pre class="export-pre" id="export-pre"></pre>
+        <button class="export-btn" onclick="copyCSS(this)">Copiar variables CSS</button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <!-- TAB: COLORES -->
+      <section class="tab-section on" id="tab-palette">
+        <div class="page-title">Sistema de Color</div>
+        <div class="page-sub">Seleccioná un tema o editá los tokens. Los cambios se aplican en tiempo real en todas las pantallas.</div>
+
+        <div class="pal-card">
+          <div class="pal-card-title">Paleta Principal</div>
+          <div class="pal-swatches">
+            <div class="pal-swatch-wrap">
+              <div class="pal-swatch-box" id="swatch-dark" style="background:#0F1F35"></div>
+              <div class="pal-swatch-label">Dark</div>
+              <div class="pal-swatch-val" id="swval-dark">#0F1F35</div>
+            </div>
+            <div class="pal-swatch-wrap">
+              <div class="pal-swatch-box" id="swatch-navy" style="background:#1A3355"></div>
+              <div class="pal-swatch-label">Navy</div>
+              <div class="pal-swatch-val" id="swval-navy">#1A3355</div>
+            </div>
+            <div class="pal-swatch-wrap">
+              <div class="pal-swatch-box" id="swatch-teal" style="background:#0D9488"></div>
+              <div class="pal-swatch-label">Teal</div>
+              <div class="pal-swatch-val" id="swval-teal">#0D9488</div>
+            </div>
+            <div class="pal-swatch-wrap">
+              <div class="pal-swatch-box" id="swatch-amber" style="background:#F59E0B"></div>
+              <div class="pal-swatch-label">Amber</div>
+              <div class="pal-swatch-val" id="swval-amber">#F59E0B</div>
+            </div>
+            <div class="pal-swatch-wrap">
+              <div class="pal-swatch-box" id="swatch-blue" style="background:#2563EB"></div>
+              <div class="pal-swatch-label">Blue</div>
+              <div class="pal-swatch-val" id="swval-blue">#2563EB</div>
+            </div>
+            <div class="pal-swatch-wrap">
+              <div class="pal-swatch-box" id="swatch-surface" style="background:#F8FAFC;border:1px solid #E2E8F0"></div>
+              <div class="pal-swatch-label">Surface</div>
+              <div class="pal-swatch-val" id="swval-surface">#F8FAFC</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pal-card">
+          <div class="pal-card-title">Estados — KDS Semáforo de Tiempos</div>
+          <div class="pal-status">
+            <div class="pal-st-chip" style="background:rgba(34,197,94,0.1)">
+              <div class="pal-st-dot" style="background:var(--brand-success)"></div>
+              <span style="color:var(--brand-success)">Rápido &lt; 8 min</span>
+            </div>
+            <div class="pal-st-chip" style="background:rgba(245,158,11,0.1)">
+              <div class="pal-st-dot" style="background:var(--brand-amber)"></div>
+              <span style="color:var(--brand-amber)">Normal 8–15 min</span>
+            </div>
+            <div class="pal-st-chip" style="background:rgba(239,68,68,0.1)">
+              <div class="pal-st-dot" style="background:var(--brand-error)"></div>
+              <span style="color:var(--brand-error)">Urgente &gt; 15 min</span>
+            </div>
+            <div class="pal-st-chip" style="background:rgba(37,99,235,0.1)">
+              <div class="pal-st-dot" style="background:var(--brand-blue)"></div>
+              <span style="color:var(--brand-blue)">En preparación</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pal-card">
+          <div class="pal-card-title">Métodos de Pago</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span class="badge bdg-green">&#9679; Efectivo</span>
+            <span class="badge bdg-blue">&#9679; Tarjeta</span>
+            <span class="badge bdg-teal">&#9679; SINPE Móvil</span>
+            <span class="badge bdg-amber">&#9679; Transferencia</span>
+            <span class="badge bdg-dark">&#9679; Cortesía</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: PANTALLAS -->
+      <section class="tab-section" id="tab-screens">
+        <div class="page-title">Pantallas del Sistema</div>
+        <div class="page-sub">Mockups de las 3 vistas principales. Los colores reflejan la paleta activa.</div>
+
+        <div class="screen-tabs">
+          <button class="screen-tab on" data-screen="comandeo" onclick="switchScreen(this)">Comandeo (Salonero)</button>
+          <button class="screen-tab"    data-screen="kds"      onclick="switchScreen(this)">KDS (Cocina)</button>
+          <button class="screen-tab"    data-screen="dashboard" onclick="switchScreen(this)">Dashboard (Admin)</button>
+          <button class="screen-tab"    data-screen="cajero"    onclick="switchScreen(this)">Cajero</button>
+        </div>
+
+        <div class="screen-frame">
+
+          <!-- COMANDEO -->
+          <div class="screen on" id="screen-comandeo">
+            <div class="cmdo2">
+
+              <!-- FASE 1: VISTA DE PISO -->
+              <div id="cmdo-floor" class="cmdo2-view on cmdo2-floor">
+                <div class="cmdo2-topbar">
+                  <span class="cmdo2-logo">SENKU</span>
+                  <span class="cmdo2-loc">· Soda El Senku · Local Principal</span>
+                  <div class="cmdo2-sp"></div>
+                  <span class="cmdo2-chip">&#9679; En línea</span>
+                  <span class="cmdo2-clock" id="cmdo-clock"></span>
+                  <span class="cmdo2-user">&#128100; María S.</span>
+                </div>
+                <div class="floor-filter">
+                  <button class="floor-filter-btn on">Todas (6)</button>
+                  <button class="floor-filter-btn">Disponibles (3)</button>
+                  <button class="floor-filter-btn">Ocupadas (3)</button>
+                  <button class="floor-new-btn">+ Nueva orden</button>
+                </div>
+                <div id="floor-canvas" class="floor-canvas"></div>
+              </div>
+
+              <!-- FASE 2: VISTA DE ORDEN -->
+              <div id="cmdo-order-v" class="cmdo2-view cmdo2-order">
+                <div class="ord-header">
+                  <span class="ord-back" onclick="switchCmdoView('floor')">&#8592; Piso</span>
+                  <div class="ord-sep"></div>
+                  <span class="ord-mesa">Mesa 1</span>
+                  <span class="ord-meta">· María S. · 00:47</span>
+                  <div class="ord-hsp"></div>
+                  <button class="ord-act-btn">Dividir</button>
+                  <button class="ord-act-btn">Descuento</button>
+                  <button class="ord-cobrar-btn">Cobrar &#8594;</button>
+                </div>
+                <div class="ord-body">
+                  <div class="ord-menu">
+                    <div class="ord-cats">
+                      <div class="ord-cat on">Desayunos</div>
+                      <div class="ord-cat">Almuerzos</div>
+                      <div class="ord-cat">Bebidas</div>
+                      <div class="ord-cat">Postres</div>
+                    </div>
+                    <div class="ord-items">
+                      <div class="ord-item"><div class="ord-item-name">Gallo Pinto con Huevos</div><div class="ord-item-price">&#8353;3,500</div><div class="ord-item-prep">&#9203; 10 min</div></div>
+                      <div class="ord-item"><div class="ord-item-name">Casado de Pollo</div><div class="ord-item-price">&#8353;4,500</div><div class="ord-item-prep">&#9203; 15 min</div></div>
+                      <div class="ord-item"><div class="ord-item-name">Pancakes con Miel</div><div class="ord-item-price">&#8353;3,000</div><div class="ord-item-prep">&#9203; 8 min</div></div>
+                      <div class="ord-item"><div class="ord-item-name">Omelet de Vegetales</div><div class="ord-item-price">&#8353;3,200</div><div class="ord-item-prep">&#9203; 10 min</div></div>
+                      <div class="ord-item"><div class="ord-item-name">Casado de Res</div><div class="ord-item-price">&#8353;5,500</div><div class="ord-item-prep">&#9203; 20 min</div></div>
+                      <div class="ord-item"><div class="ord-item-name">Arroz con Pollo</div><div class="ord-item-price">&#8353;4,800</div><div class="ord-item-prep">&#9203; 15 min</div></div>
+                    </div>
+                  </div>
+                  <div class="ord-summary">
+                    <div class="ord-sum-hdr">
+                      <span class="ord-sum-title">Mesa 1 · 3 items</span>
+                      <span class="ord-sum-timer">00:47</span>
+                    </div>
+                    <div class="ord-sum-items">
+                      <div class="ord-sum-row"><div class="ord-sum-qty">2</div><div class="ord-sum-iname">Gallo Pinto con Huevos</div><div class="ord-sum-iprice">&#8353;7,000</div></div>
+                      <div class="ord-sum-row"><div class="ord-sum-qty">1</div><div class="ord-sum-iname">Casado de Pollo</div><div class="ord-sum-iprice">&#8353;4,500</div></div>
+                      <div class="ord-sum-row"><div class="ord-sum-qty">2</div><div class="ord-sum-iname">Refresco Natural</div><div class="ord-sum-iprice">&#8353;3,000</div></div>
+                    </div>
+                    <div class="ord-sum-foot">
+                      <div class="ord-sum-line"><span>Subtotal</span><span>&#8353;14,500</span></div>
+                      <div class="ord-sum-line"><span>IVA (13%)</span><span>&#8353;1,885</span></div>
+                      <div class="ord-sum-total"><span>Total</span><span class="ord-sum-total-val">&#8353;16,385</span></div>
+                      <button class="btn-send-kds">Enviar a cocina &#8594;</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- KDS -->
+          <div class="screen" id="screen-kds">
+            <div class="kds">
+              <div class="kds-bar">
+                <span class="kds-bar-logo">SENKU</span>
+                <span class="kds-bar-sep">·</span>
+                <span class="kds-bar-label">KDS — Cocina</span>
+                <div class="kds-bar-sp"></div>
+                <div class="kds-bar-online"><div class="kds-online-dot"></div>En línea</div>
+                <span class="kds-bar-time" id="kds-clock"></span>
+              </div>
+              <div class="kds-cols">
+                <div class="kds-col">
+                  <div class="kds-col-hdr">
+                    <div class="kds-col-dot" style="background:var(--brand-amber)"></div>
+                    <span class="kds-col-lbl">Pendiente</span>
+                    <span class="kds-col-cnt">2</span>
+                  </div>
+                  <div class="kds-card pend">
+                    <div class="kds-card-hdr"><span class="kds-card-table">Mesa 3</span><span class="kds-timer kds-timer-g">02:15</span></div>
+                    <div class="kds-card-items">
+                      <div class="kds-card-item"><span class="kds-item-qty">2×</span><span class="kds-item-name">Gallo Pinto con Huevos</span></div>
+                      <div class="kds-card-item"><span class="kds-item-qty">1×</span><span class="kds-item-name">Pancakes con Miel</span></div>
+                    </div>
+                    <button class="kds-card-btn">COMENZAR PREPARACIÓN</button>
+                  </div>
+                  <div class="kds-card pend">
+                    <div class="kds-card-hdr"><span class="kds-card-table">Mesa 6</span><span class="kds-timer kds-timer-g">00:45</span></div>
+                    <div class="kds-card-items">
+                      <div class="kds-card-item"><span class="kds-item-qty">3×</span><span class="kds-item-name">Casado de Res</span></div>
+                    </div>
+                    <button class="kds-card-btn">COMENZAR PREPARACIÓN</button>
+                  </div>
+                </div>
+                <div class="kds-col">
+                  <div class="kds-col-hdr">
+                    <div class="kds-col-dot" style="background:var(--brand-blue)"></div>
+                    <span class="kds-col-lbl">En Preparación</span>
+                    <span class="kds-col-cnt">2</span>
+                  </div>
+                  <div class="kds-card prog warn">
+                    <div class="kds-card-hdr"><span class="kds-card-table">Mesa 1</span><span class="kds-timer kds-timer-y">10:32</span></div>
+                    <div class="kds-card-items">
+                      <div class="kds-card-item"><span class="kds-item-qty">2×</span><span class="kds-item-name">Gallo Pinto con Huevos</span></div>
+                      <div class="kds-card-item"><span class="kds-item-qty">1×</span><span class="kds-item-name">Casado de Pollo</span></div>
+                      <div class="kds-card-item"><span class="kds-item-qty">&nbsp;</span><span class="kds-item-note">sin chile</span></div>
+                    </div>
+                    <button class="kds-card-btn ready">&#10003; MARCAR LISTO</button>
+                  </div>
+                  <div class="kds-card prog">
+                    <div class="kds-card-hdr"><span class="kds-card-table">Mesa 2</span><span class="kds-timer kds-timer-g">05:20</span></div>
+                    <div class="kds-card-items">
+                      <div class="kds-card-item"><span class="kds-item-qty">1×</span><span class="kds-item-name">Arroz con Pollo</span></div>
+                      <div class="kds-card-item"><span class="kds-item-qty">2×</span><span class="kds-item-name">Sopa Azteca</span></div>
+                    </div>
+                    <button class="kds-card-btn ready">&#10003; MARCAR LISTO</button>
+                  </div>
+                </div>
+                <div class="kds-col">
+                  <div class="kds-col-hdr">
+                    <div class="kds-col-dot" style="background:var(--brand-success)"></div>
+                    <span class="kds-col-lbl">Listo</span>
+                    <span class="kds-col-cnt">1</span>
+                  </div>
+                  <div class="kds-card rdy dim">
+                    <div class="kds-card-hdr"><span class="kds-card-table">Mesa 5</span><span class="kds-timer kds-timer-g">14:00</span></div>
+                    <div class="kds-card-items">
+                      <div class="kds-card-item"><span class="kds-item-qty">4×</span><span class="kds-item-name">Casado de Pescado</span></div>
+                    </div>
+                    <button class="kds-card-btn done">&#10003; ENTREGADO</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- DASHBOARD -->
+          <div class="screen" id="screen-dashboard">
+            <div class="dash">
+              <div class="dash-bar">
+                <div class="dash-bar-logo">SENKU<em>POS</em></div>
+                <div class="dash-nav">
+                  <div class="dash-nav-item on">Dashboard</div>
+                  <div class="dash-nav-item">Órdenes</div>
+                  <div class="dash-nav-item">Menú</div>
+                  <div class="dash-nav-item">Reportes</div>
+                </div>
+                <div class="dash-bar-sp"></div>
+                <div class="dash-bar-date">Viernes, 23 mayo 2026</div>
+                <div class="dash-bar-user"><div class="dash-bar-avatar">LR</div>Luis R.</div>
+              </div>
+              <div class="dash-body">
+                <div class="dash-metrics">
+                  <div class="dash-metric"><div class="dash-metric-lbl">Ventas Hoy</div><div class="dash-metric-val">&#8353;248k</div><div class="dash-metric-delta">&#8593; +12% vs ayer</div></div>
+                  <div class="dash-metric"><div class="dash-metric-lbl">Órdenes</div><div class="dash-metric-val">34</div><div class="dash-metric-delta">&#8593; +4 hoy</div></div>
+                  <div class="dash-metric"><div class="dash-metric-lbl">Ticket Promedio</div><div class="dash-metric-val">&#8353;7.3k</div><div class="dash-metric-delta neg">&#8595; &#8722;3% vs ayer</div></div>
+                  <div class="dash-metric"><div class="dash-metric-lbl">Mesas Activas</div><div class="dash-metric-val">3 / 6</div><div class="dash-metric-delta">50% ocupación</div></div>
+                </div>
+                <div class="dash-chart">
+                  <div class="dash-chart-hdr">
+                    <div class="dash-chart-title">Ventas por hora</div>
+                    <div class="dash-chart-sub">Hoy vs promedio semanal</div>
+                  </div>
+                  <div class="dash-bars">
+                    <div class="dash-bg"><div class="dash-bar-el" style="height:18%"></div><div class="dash-bar-lbl">6a</div></div>
+                    <div class="dash-bg"><div class="dash-bar-el" style="height:40%"></div><div class="dash-bar-lbl">7a</div></div>
+                    <div class="dash-bg"><div class="dash-bar-el" style="height:75%"></div><div class="dash-bar-lbl">8a</div></div>
+                    <div class="dash-bg"><div class="dash-bar-el" style="height:62%"></div><div class="dash-bar-lbl">9a</div></div>
+                    <div class="dash-bg"><div class="dash-bar-el" style="height:50%"></div><div class="dash-bar-lbl">10a</div></div>
+                    <div class="dash-bg"><div class="dash-bar-el hi" style="height:92%"></div><div class="dash-bar-lbl">11a</div></div>
+                    <div class="dash-bg"><div class="dash-bar-el hi" style="height:100%"></div><div class="dash-bar-lbl">12p</div></div>
+                    <div class="dash-bg"><div class="dash-bar-el" style="height:78%"></div><div class="dash-bar-lbl">1p</div></div>
+                    <div class="dash-bg"><div class="dash-bar-el" style="height:55%"></div><div class="dash-bar-lbl">2p</div></div>
+                    <div class="dash-bg"><div class="dash-bar-el" style="height:35%"></div><div class="dash-bar-lbl">3p</div></div>
+                  </div>
+                </div>
+                <div class="dash-right">
+                  <div class="dash-widget">
+                    <div class="dash-widget-title">Órdenes Activas</div>
+                    <div class="dash-ord-row"><div class="dash-ord-dot" style="background:var(--brand-amber)"></div><div class="dash-ord-info"><div class="dash-ord-name">Mesa 1</div><div class="dash-ord-meta">3 items · María S. · 10:30</div></div><div class="dash-ord-amt">&#8353;16,385</div></div>
+                    <div class="dash-ord-row"><div class="dash-ord-dot" style="background:var(--brand-blue)"></div><div class="dash-ord-info"><div class="dash-ord-name">Mesa 3</div><div class="dash-ord-meta">2 items · Carlos M. · 10:45</div></div><div class="dash-ord-amt">&#8353;8,500</div></div>
+                    <div class="dash-ord-row"><div class="dash-ord-dot" style="background:var(--brand-success)"></div><div class="dash-ord-info"><div class="dash-ord-name">Mesa 5</div><div class="dash-ord-meta">4 items · Ana R. · 11:00</div></div><div class="dash-ord-amt">&#8353;24,000</div></div>
+                  </div>
+                  <div class="dash-chef">
+                    <div class="dash-chef-hdr">
+                      <div class="dash-chef-icon">&#129302;</div>
+                      <div><div class="dash-chef-name">Senku Chef</div><div class="dash-chef-sub">Asistente IA · V1.5</div></div>
+                      <div class="dash-chef-chip">PRÓXIMO</div>
+                    </div>
+                    <div class="dash-chef-msg">El Casado de Res fue tu platillo más rentable esta semana: 68% de margen y 42 unidades vendidas &#128200;</div>
+                    <div class="dash-chef-inp">
+                      <input class="dash-chef-field" placeholder="Preguntale algo..." readonly>
+                      <button class="dash-chef-send">&#8594;</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CAJERO -->
+          <div class="screen" id="screen-cajero">
+            <div class="cajero">
+              <div class="caj-bar">
+                <span class="caj-back">&#8592; Piso</span>
+                <div class="caj-bar-divider"></div>
+                <span class="caj-title">Cobrar · Mesa 1</span>
+                <span class="caj-meta">· 3 items · 00:14:22</span>
+                <div class="caj-bar-sp"></div>
+                <button class="caj-cancel">Cancelar</button>
+              </div>
+              <div class="caj-body">
+                <div class="caj-left">
+                  <div class="caj-section">
+                    <div class="caj-section-title">Resumen de Orden — Mesa 1</div>
+                    <div class="caj-item-row"><span class="caj-item-qty">2×</span><span class="caj-item-name">Gallo Pinto con Huevos</span><span class="caj-item-price">&#8353;7,000</span></div>
+                    <div class="caj-item-row"><span class="caj-item-qty">1×</span><span class="caj-item-name">Casado de Pollo</span><span class="caj-item-price">&#8353;4,500</span></div>
+                    <div class="caj-item-row"><span class="caj-item-qty">2×</span><span class="caj-item-name">Refresco Natural</span><span class="caj-item-price">&#8353;3,000</span></div>
+                    <div class="caj-totals">
+                      <div class="caj-total-line"><span>Subtotal</span><span>&#8353;14,500</span></div>
+                      <div class="caj-total-line"><span>IVA (13%)</span><span>&#8353;1,885</span></div>
+                      <div class="caj-total-main"><span>Total</span><span class="caj-total-amt">&#8353;16,385</span></div>
+                    </div>
+                  </div>
+                  <div class="caj-loyalty">
+                    <div class="caj-loy-hdr">
+                      <div class="caj-loy-icon">&#11088;</div>
+                      <div><div class="caj-loy-name">María López</div><div class="caj-loy-phone">+506 8888-1234</div></div>
+                    </div>
+                    <div class="caj-loy-pts">
+                      <div class="caj-loy-pt-group"><div class="caj-loy-pt-val">1,240</div><div class="caj-loy-pt-lbl">Puntos actuales</div></div>
+                      <span class="caj-loy-sep">+</span>
+                      <div class="caj-loy-pt-group"><div class="caj-loy-pt-new">+164</div><div class="caj-loy-pt-lbl">Gana hoy</div></div>
+                      <span class="caj-loy-sep">=</span>
+                      <div class="caj-loy-pt-group"><div class="caj-loy-pt-val">1,404</div><div class="caj-loy-pt-lbl">Nuevo saldo</div></div>
+                    </div>
+                    <button class="caj-loy-btn">&#9733; Canjear 500 pts &#8594; &#8353;500 de descuento</button>
+                  </div>
+                </div>
+                <div class="caj-right">
+                  <div>
+                    <div class="caj-input-lbl">Método de pago</div>
+                    <div class="caj-pay-methods">
+                      <button class="caj-pay-btn on">&#128181; Efectivo</button>
+                      <button class="caj-pay-btn">&#128179; Tarjeta</button>
+                      <button class="caj-pay-btn">&#128242; SINPE</button>
+                    </div>
+                  </div>
+                  <div class="caj-total-display">
+                    <div class="caj-total-display-lbl">Total a cobrar</div>
+                    <div class="caj-total-display-val">&#8353;16,385</div>
+                  </div>
+                  <div>
+                    <div class="caj-input-lbl">Efectivo recibido</div>
+                    <input class="caj-amount-inp" type="text" value="&#8353;20,000" readonly>
+                  </div>
+                  <div class="caj-change">
+                    <span class="caj-change-lbl">Vuelto</span>
+                    <span class="caj-change-val">&#8353;3,615</span>
+                  </div>
+                  <div class="caj-factura-row">
+                    <span class="caj-factura-lbl">&#128196; Emitir Factura Electrónica</span>
+                    <div class="caj-factura-toggle"><div class="caj-factura-knob"></div></div>
+                  </div>
+                  <button class="btn-cobrar">COBRAR &#8353;16,385</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- TAB: COMPONENTES -->
+      <section class="tab-section" id="tab-components">
+        <div class="page-title">Componentes</div>
+        <div class="page-sub">Building blocks del sistema de diseño — se actualizan con la paleta activa.</div>
+
+        <div class="comp-card">
+          <div class="comp-title">Botones</div>
+          <div class="comp-row">
+            <button class="btn btn-teal">Enviar a cocina</button>
+            <button class="btn btn-outline-teal">Cancelar</button>
+            <button class="btn btn-dk">Nueva orden</button>
+            <button class="btn btn-amb">Cobrar</button>
+            <button class="btn btn-dng">Anular</button>
+          </div>
+        </div>
+
+        <div class="comp-card">
+          <div class="comp-title">Badges de Estado</div>
+          <div class="comp-row">
+            <span class="badge bdg-amber">&#9679; Pendiente</span>
+            <span class="badge bdg-blue">&#9679; En preparación</span>
+            <span class="badge bdg-green">&#9679; Listo</span>
+            <span class="badge bdg-red">&#9679; Urgente</span>
+            <span class="badge bdg-dark">&#9679; Pagado</span>
+            <span class="badge bdg-teal">&#9679; En línea</span>
+          </div>
+        </div>
+
+        <div class="comp-card">
+          <div class="comp-title">Inputs</div>
+          <div class="comp-row">
+            <input class="inp-base" type="text" placeholder="Buscar cliente por teléfono...">
+            <input class="inp-base" type="text" placeholder="Notas del ítem">
+          </div>
+        </div>
+
+        <div class="comp-card">
+          <div class="comp-title">Tarjetas de Mesa</div>
+          <div class="comp-row">
+            <div class="mesa-demo sel">
+              <div class="mesa-demo-name">Mesa 1</div>
+              <div class="mesa-demo-st"><span class="mesa-demo-dot" style="background:var(--brand-amber)"></span><span style="color:var(--brand-amber)">Ocupada</span></div>
+              <div class="mesa-demo-total">&#8353;16,385</div>
+            </div>
+            <div class="mesa-demo">
+              <div class="mesa-demo-name">Mesa 2</div>
+              <div class="mesa-demo-st"><span class="mesa-demo-dot" style="background:var(--brand-success)"></span><span style="color:var(--brand-success)">Libre</span></div>
+              <div class="mesa-demo-total">—</div>
+            </div>
+            <div class="mesa-demo urg">
+              <div class="mesa-demo-name">Mesa 3</div>
+              <div class="mesa-demo-st"><span class="mesa-demo-dot" style="background:var(--brand-error)"></span><span style="color:var(--brand-error)">Urgente</span></div>
+              <div class="mesa-demo-total">&#8353;8,500</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: TIPOGRAFÍA -->
+      <section class="tab-section" id="tab-typography">
+        <div class="page-title">Tipografía</div>
+        <div class="page-sub">DM Sans para UI general · DM Mono para números, precios, timestamps y el KDS.</div>
+
+        <div class="type-card">
+          <div class="type-row">
+            <div class="type-meta">DM Sans 700 · 46px · Display</div>
+            <div class="t-display">Senku POS</div>
+          </div>
+          <div class="type-row">
+            <div class="type-meta">DM Sans 700 · 28px · Heading</div>
+            <div class="t-h1">Panel de Comandeo</div>
+          </div>
+          <div class="type-row">
+            <div class="type-meta">DM Sans 600 · 18px · Subheading</div>
+            <div class="t-h2">Mesa 1 — Ocupada · Salonero: María S.</div>
+          </div>
+          <div class="type-row">
+            <div class="type-meta">DM Sans 400 · 14px · Body</div>
+            <div class="t-body">El sistema registra cada venta y sincroniza puntos con Senku Lealtad automáticamente al cerrar la orden. La factura electrónica 4.4 se envía a Hacienda en segundo plano.</div>
+          </div>
+          <div class="type-row">
+            <div class="type-meta">DM Sans 400 · 12px · Caption / Muted</div>
+            <div class="t-small">Última sync: hace 2 min · 3 mesas activas · Turno de María S. · ORD-0094</div>
+          </div>
+        </div>
+
+        <div class="type-card">
+          <div class="type-row">
+            <div class="type-meta">DM Mono 500 · 28px · Valores monetarios</div>
+            <div class="t-mono-lg">&#8353;248,350</div>
+          </div>
+          <div class="type-row">
+            <div class="type-meta">DM Mono 400 · 14px · IDs, timestamps, códigos</div>
+            <div class="t-mono-md">11:24:37 · ORD-0094 · Mesa 1 · 3-101-123456</div>
+          </div>
+          <div class="type-row">
+            <div class="type-meta">DM Mono · KDS Timer — semáforo por tiempo transcurrido</div>
+            <div class="kds-timers">
+              <span class="kds-t" style="color:var(--brand-success)">04:15</span>
+              <span class="kds-t" style="color:var(--brand-amber)">10:42</span>
+              <span class="kds-t" style="color:var(--brand-error)">17:08</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script>
+  // ===== THEMES =====
+  const THEMES = {
+    dark: {
+      '--brand-dark': '#0F1F35', '--brand-navy': '#1A3355', '--brand-teal': '#0D9488',
+      '--brand-amber': '#F59E0B', '--brand-blue': '#2563EB', '--brand-surface': '#F8FAFC',
+      '--brand-text': '#1E293B', '--brand-muted': '#64748B', '--brand-border': '#E2E8F0',
+      '--brand-success': '#22C55E', '--brand-error': '#EF4444',
+    },
+    light: {
+      '--brand-dark': '#1E293B', '--brand-navy': '#334155', '--brand-teal': '#0D9488',
+      '--brand-amber': '#D97706', '--brand-blue': '#3B82F6', '--brand-surface': '#F0FDF9',
+      '--brand-text': '#0F172A', '--brand-muted': '#64748B', '--brand-border': '#CBD5E1',
+      '--brand-success': '#16A34A', '--brand-error': '#DC2626',
+    },
+    warm: {
+      '--brand-dark': '#2D1B0E', '--brand-navy': '#3D2314', '--brand-teal': '#D97706',
+      '--brand-amber': '#FBBF24', '--brand-blue': '#B45309', '--brand-surface': '#FFFBF5',
+      '--brand-text': '#1C1107', '--brand-muted': '#92735A', '--brand-border': '#E8D5C0',
+      '--brand-success': '#65A30D', '--brand-error': '#DC2626',
+    },
+    ocean: {
+      '--brand-dark': '#080D1A', '--brand-navy': '#0F1A35', '--brand-teal': '#06B6D4',
+      '--brand-amber': '#F0ABFC', '--brand-blue': '#8B5CF6', '--brand-surface': '#F0F9FF',
+      '--brand-text': '#0C1428', '--brand-muted': '#64748B', '--brand-border': '#E0F2FE',
+      '--brand-success': '#22C55E', '--brand-error': '#EF4444',
+    },
+  }
+
+  // token key → short name used in IDs
+  const TOKEN_KEYS = [
+    { key: '--brand-dark',    id: 'dark' },
+    { key: '--brand-navy',    id: 'navy' },
+    { key: '--brand-teal',    id: 'teal' },
+    { key: '--brand-amber',   id: 'amber' },
+    { key: '--brand-blue',    id: 'blue' },
+    { key: '--brand-surface', id: 'surface' },
+  ]
+
+  function applyTheme(el) {
+    const name = el.dataset.theme
+    const vars = THEMES[name]
+    const root = document.documentElement
+    Object.entries(vars).forEach(function(entry) { root.style.setProperty(entry[0], entry[1]) })
+
+    // Update preset cards
+    document.querySelectorAll('.preset').forEach(function(p) { p.classList.remove('on') })
+    el.classList.add('on')
+
+    // Sync sidebar pickers + labels
+    TOKEN_KEYS.forEach(function(t) {
+      if (!vars[t.key]) return
+      const inp = document.getElementById('tok-' + t.id)
+      const lbl = document.getElementById('val-' + t.id)
+      if (inp) inp.value = vars[t.key]
+      if (lbl) lbl.textContent = vars[t.key]
+    })
+
+    syncSwatches()
+    renderExport()
+  }
+
+  function updateToken(inp) {
+    var varName = inp.dataset.var
+    var val = inp.value
+    document.documentElement.style.setProperty(varName, val)
+    var shortId = varName.replace('--brand-', '')
+    var lbl = document.getElementById('val-' + shortId)
+    if (lbl) lbl.textContent = val
+    syncSwatches()
+    renderExport()
+  }
+
+  function syncSwatches() {
+    TOKEN_KEYS.forEach(function(t) {
+      var box = document.getElementById('swatch-' + t.id)
+      var val = document.getElementById('swval-' + t.id)
+      var cur = getComputedStyle(document.documentElement).getPropertyValue(t.key).trim()
+      if (box) box.style.background = cur
+      if (val) val.textContent = cur
+    })
+  }
+
+  function renderExport() {
+    var root = getComputedStyle(document.documentElement)
+    var lines = TOKEN_KEYS.map(function(t) {
+      return '  ' + t.key + ': ' + root.getPropertyValue(t.key).trim() + ';'
+    }).join('\n')
+    var pre = document.getElementById('export-pre')
+    if (pre) pre.textContent = ':root {\n' + lines + '\n}'
+  }
+
+  function copyCSS(btn) {
+    var text = document.getElementById('export-pre').textContent
+    navigator.clipboard.writeText(text).then(function() {
+      btn.textContent = 'Copiado!'
+      setTimeout(function() { btn.textContent = 'Copiar variables CSS' }, 2000)
+    })
+  }
+
+  function switchTab(el) {
+    document.querySelectorAll('.hdr-tab').forEach(function(t) { t.classList.remove('on') })
+    document.querySelectorAll('.tab-section').forEach(function(s) { s.classList.remove('on') })
+    el.classList.add('on')
+    var section = document.getElementById('tab-' + el.dataset.tab)
+    if (section) section.classList.add('on')
+  }
+
+  function switchScreen(el) {
+    document.querySelectorAll('.screen-tab').forEach(function(t) { t.classList.remove('on') })
+    document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('on') })
+    el.classList.add('on')
+    var sc = document.getElementById('screen-' + el.dataset.screen)
+    if (sc) sc.classList.add('on')
+  }
+
+  function switchCmdoView(view) {
+    var floor = document.getElementById('cmdo-floor')
+    var order = document.getElementById('cmdo-order-v')
+    if (view === 'floor') {
+      if (floor) floor.classList.add('on')
+      if (order) order.classList.remove('on')
+    } else {
+      if (floor) floor.classList.remove('on')
+      if (order) order.classList.add('on')
+    }
+  }
+
+  function tick() {
+    var t = new Date().toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })
+    var a = document.getElementById('cmdo-clock')
+    var b = document.getElementById('kds-clock')
+    if (a) a.textContent = t
+    if (b) b.textContent = t
+  }
+
+  function createFloorPlan() {
+    var canvas = document.getElementById('floor-canvas')
+    if (!canvas) return
+
+    var tables = [
+      { name: 'Mesa 1', cap: 4, status: 'occ', x: 140, y: 140, timer: '00:47', total: '₡16,385', waiter: 'María S.' },
+      { name: 'Mesa 2', cap: 6, status: 'libre', x: 140, y: 360, timer: null, total: null, waiter: null },
+      { name: 'Mesa 3', cap: 2, status: 'urg',  x: 390, y: 120, timer: '01:12', total: '₡8,500',  waiter: 'Carlos M.' },
+      { name: 'Mesa 4', cap: 4, status: 'libre', x: 390, y: 350, timer: null, total: null, waiter: null },
+      { name: 'Mesa 5', cap: 6, status: 'occ', x: 640, y: 140, timer: '00:08', total: '₡24,000', waiter: 'Ana R.' },
+      { name: 'Mesa 6', cap: 2, status: 'libre', x: 640, y: 350, timer: null, total: null, waiter: null },
+    ]
+
+    // chair angle layouts per seat count (degrees, 0=right, 90=bottom)
+    var chairLayouts = {
+      2: [270, 90],
+      4: [315, 45, 135, 225],
+      6: [270, 330, 30, 90, 150, 210]
+    }
+
+    var ICON_D = 68    // table circle diameter
+    var CHAIR_ORBIT = 46  // distance from table center to chair center
+    var CHAIR_SZ = 11  // chair circle diameter
+    var RAD = Math.PI / 180
+
+    // zone label
+    var zoneA = document.createElement('div')
+    zoneA.className = 'floor-zone-lbl'
+    zoneA.textContent = 'Zona A — Salón Principal'
+    zoneA.style.left = '24px'
+    zoneA.style.top = '16px'
+    canvas.appendChild(zoneA)
+
+    var zoneB = document.createElement('div')
+    zoneB.className = 'floor-zone-lbl'
+    zoneB.textContent = 'Zona B — Terraza'
+    zoneB.style.left = '550px'
+    zoneB.style.top = '16px'
+    canvas.appendChild(zoneB)
+
+    tables.forEach(function(t) {
+      // outer wrapper — positioned absolutely
+      var wrap = document.createElement('div')
+      wrap.className = 'ftable-wrap ' + t.status
+      wrap.style.left = t.x + 'px'
+      wrap.style.top = t.y + 'px'
+
+      // centering inner — holds icon + label, uses translate(-50%,-50%)
+      var inner = document.createElement('div')
+      inner.className = 'ftable-inner'
+      inner.addEventListener('click', function() { switchCmdoView('order') })
+
+      // icon container (overflow: visible so chairs stick out)
+      var iconBox = document.createElement('div')
+      iconBox.className = 'ftable-icon'
+      iconBox.style.width = ICON_D + 'px'
+      iconBox.style.height = ICON_D + 'px'
+
+      // table circle
+      var tableCircle = document.createElement('div')
+      tableCircle.className = 'ftable-top'
+      tableCircle.textContent = t.name.replace('Mesa ', 'M')
+      iconBox.appendChild(tableCircle)
+
+      // chair circles
+      var angles = chairLayouts[t.cap] || chairLayouts[4]
+      angles.forEach(function(deg) {
+        var chair = document.createElement('div')
+        chair.className = 'fchair'
+        var cx = ICON_D / 2 + CHAIR_ORBIT * Math.cos(deg * RAD) - CHAIR_SZ / 2
+        var cy = ICON_D / 2 + CHAIR_ORBIT * Math.sin(deg * RAD) - CHAIR_SZ / 2
+        chair.style.width = CHAIR_SZ + 'px'
+        chair.style.height = CHAIR_SZ + 'px'
+        chair.style.left = cx + 'px'
+        chair.style.top = cy + 'px'
+        iconBox.appendChild(chair)
+      })
+
+      inner.appendChild(iconBox)
+
+      // label block below icon
+      var label = document.createElement('div')
+      label.className = 'ftable-label'
+
+      var nameEl = document.createElement('div')
+      nameEl.className = 'ftable-name'
+      nameEl.textContent = t.name
+      label.appendChild(nameEl)
+
+      if (t.timer) {
+        var timerEl = document.createElement('div')
+        timerEl.className = 'ftable-timer ' + t.status
+        timerEl.textContent = t.timer
+        label.appendChild(timerEl)
+
+        var totalEl = document.createElement('div')
+        totalEl.className = 'ftable-amount ' + t.status
+        totalEl.textContent = t.total
+        label.appendChild(totalEl)
+
+        var waiterEl = document.createElement('div')
+        waiterEl.className = 'ftable-waiter'
+        waiterEl.textContent = t.waiter
+        label.appendChild(waiterEl)
+      }
+
+      inner.appendChild(label)
+      wrap.appendChild(inner)
+      canvas.appendChild(wrap)
+    })
+  }
+
+  // Boot
+  syncSwatches()
+  renderExport()
+  tick()
+  setInterval(tick, 1000)
+  createFloorPlan()
+</script>
+</body>
+</html>

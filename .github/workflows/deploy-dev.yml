@@ -1,0 +1,108 @@
+name: Deploy to Dev
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: 882788449114.dkr.ecr.us-east-1.amazonaws.com
+  ECR_REPOSITORY: senku-pos
+  SERVICE_NAME: senku-pos-dev
+  CLUSTER: default
+  EXECUTION_ROLE: arn:aws:iam::882788449114:role/ecsTaskExecutionRole
+  INFRA_ROLE: arn:aws:iam::882788449114:role/ecsInfrastructureRoleForExpressServices
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image
+        id: build
+        run: |
+          IMAGE_TAG=${{ github.sha }}
+          IMAGE="${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:dev-${IMAGE_TAG}"
+          docker build -f apps/pos/Dockerfile \
+            --build-arg NEXT_PUBLIC_APP_URL=https://pos-dev.gosenku.com \
+            --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }} \
+            --build-arg NEXT_PUBLIC_CLERK_SIGN_IN_URL=https://gosenku.com/sign-in \
+            --build-arg NEXT_PUBLIC_CLERK_SIGN_UP_URL=https://gosenku.com/sign-up \
+            -t "$IMAGE" \
+            -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:dev \
+            .
+          docker push "$IMAGE"
+          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:dev
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
+
+      - name: Deploy to ECS Express
+        run: |
+          IMAGE="${{ steps.build.outputs.image }}"
+          SERVICE_NAME="${{ env.SERVICE_NAME }}"
+          CLUSTER="${{ env.CLUSTER }}"
+
+          PRIMARY_CONTAINER=$(cat <<JSON
+          {
+            "image": "$IMAGE",
+            "containerPort": 8080,
+            "environment": [
+              {"name": "NODE_ENV", "value": "production"},
+              {"name": "NEXT_PUBLIC_APP_URL", "value": "https://pos-dev.gosenku.com"},
+              {"name": "NEXT_PUBLIC_CLERK_SIGN_IN_URL", "value": "https://gosenku.com/sign-in"},
+              {"name": "NEXT_PUBLIC_CLERK_SIGN_UP_URL", "value": "https://gosenku.com/sign-up"}
+            ],
+            "secrets": [
+              {"name": "DATABASE_URL",               "valueFrom": "arn:aws:secretsmanager:us-east-1:882788449114:secret:senku/dev/POS_DATABASE_URL-J3p7Az"},
+              {"name": "CLERK_SECRET_KEY",            "valueFrom": "arn:aws:secretsmanager:us-east-1:882788449114:secret:senku/dev/POS_CLERK_SECRET_KEY-lZLTte"},
+              {"name": "INTERNAL_API_SECRET",         "valueFrom": "arn:aws:secretsmanager:us-east-1:882788449114:secret:senku/dev/POS_INTERNAL_API_SECRET-uun3Y7"},
+              {"name": "UBER_EATS_WEBHOOK_SECRET",    "valueFrom": "arn:aws:secretsmanager:us-east-1:882788449114:secret:senku/dev/POS_UBER_EATS_WEBHOOK_SECRET-21fqG9"},
+              {"name": "PEDIDOS_YA_WEBHOOK_SECRET",   "valueFrom": "arn:aws:secretsmanager:us-east-1:882788449114:secret:senku/dev/POS_PEDIDOS_YA_WEBHOOK_SECRET-qdeCpb"}
+            ]
+          }
+          JSON
+          )
+
+          NETWORK_CONFIG='{"subnets":["subnet-07b10b0efdf05464a","subnet-059ab685e838cca98","subnet-00625fd5bbdf5c199","subnet-0771c1a6db9b5ed88","subnet-0c038308f56524136","subnet-09941a6c76592dc4f"],"securityGroups":["sg-076112b2bf2027be3"]}'
+          SCALING='{"minTaskCount":1,"maxTaskCount":5,"autoScalingMetric":"AVERAGE_CPU","autoScalingTargetValue":60}'
+
+          # Check if service already exists
+          SERVICE_ARN=$(aws ecs list-services \
+            --cluster "$CLUSTER" \
+            --query "serviceArns[?contains(@, '$SERVICE_NAME')]" \
+            --output text 2>/dev/null || echo "")
+
+          if [ -z "$SERVICE_ARN" ]; then
+            echo "Creating ECS Express service $SERVICE_NAME..."
+            aws ecs create-express-gateway-service \
+              --service-name "$SERVICE_NAME" \
+              --cluster "$CLUSTER" \
+              --execution-role-arn "${{ env.EXECUTION_ROLE }}" \
+              --infrastructure-role-arn "${{ env.INFRA_ROLE }}" \
+              --health-check-path "/api/health" \
+              --cpu 1024 \
+              --memory 2048 \
+              --primary-container "$PRIMARY_CONTAINER" \
+              --network-configuration "$NETWORK_CONFIG" \
+              --scaling-target "$SCALING"
+          else
+            echo "Updating ECS Express service $SERVICE_NAME..."
+            aws ecs update-express-gateway-service \
+              --service-arn "$SERVICE_ARN" \
+              --primary-container "$PRIMARY_CONTAINER"
+          fi
