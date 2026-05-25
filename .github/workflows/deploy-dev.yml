@@ -69,7 +69,7 @@ jobs:
             ],
             "secrets": [
               {"name": "DATABASE_URL",               "valueFrom": "arn:aws:secretsmanager:us-east-1:882788449114:secret:senku/dev/POS_DATABASE_URL-J3p7Az"},
-              {"name": "CLERK_SECRET_KEY",            "valueFrom": "arn:aws:secretsmanager:us-east-1:882788449114:secret:senku/dev/POS_CLERK_SECRET_KEY-lZLTte"},
+              {"name": "CLERK_SECRET_KEY",            "valueFrom": "arn:aws:secretsmanager:us-east-1:882788449114:secret:senku/dev/CLERK_SECRET_KEY-HoFCin"},
               {"name": "INTERNAL_API_SECRET",         "valueFrom": "arn:aws:secretsmanager:us-east-1:882788449114:secret:senku/dev/POS_INTERNAL_API_SECRET-uun3Y7"},
               {"name": "UBER_EATS_WEBHOOK_SECRET",    "valueFrom": "arn:aws:secretsmanager:us-east-1:882788449114:secret:senku/dev/POS_UBER_EATS_WEBHOOK_SECRET-21fqG9"},
               {"name": "PEDIDOS_YA_WEBHOOK_SECRET",   "valueFrom": "arn:aws:secretsmanager:us-east-1:882788449114:secret:senku/dev/POS_PEDIDOS_YA_WEBHOOK_SECRET-qdeCpb"}
