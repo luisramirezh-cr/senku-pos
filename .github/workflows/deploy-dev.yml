@@ -42,8 +42,9 @@ jobs:
           docker build -f apps/pos/Dockerfile \
             --build-arg NEXT_PUBLIC_APP_URL=https://pos-dev.gosenku.com \
             --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }} \
-            --build-arg NEXT_PUBLIC_CLERK_SIGN_IN_URL=https://gosenku.com/sign-in \
-            --build-arg NEXT_PUBLIC_CLERK_SIGN_UP_URL=https://gosenku.com/sign-up \
+            --build-arg NEXT_PUBLIC_CLERK_SIGN_IN_URL=https://root-dev.gosenku.com/sign-in \
+            --build-arg NEXT_PUBLIC_CLERK_SIGN_UP_URL=https://root-dev.gosenku.com/sign-up \
+            --build-arg NEXT_PUBLIC_ROOT_URL=https://root-dev.gosenku.com \
             -t "$IMAGE" \
             -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:dev \
             .
@@ -63,9 +64,7 @@ jobs:
             "containerPort": 8080,
             "environment": [
               {"name": "NODE_ENV", "value": "production"},
-              {"name": "NEXT_PUBLIC_APP_URL", "value": "https://pos-dev.gosenku.com"},
-              {"name": "NEXT_PUBLIC_CLERK_SIGN_IN_URL", "value": "https://gosenku.com/sign-in"},
-              {"name": "NEXT_PUBLIC_CLERK_SIGN_UP_URL", "value": "https://gosenku.com/sign-up"}
+              {"name": "ROOT_API_URL", "value": "https://root-dev.gosenku.com/api/internal"}
             ],
             "secrets": [
               {"name": "DATABASE_URL",               "valueFrom": "arn:aws:secretsmanager:us-east-1:882788449114:secret:senku/dev/POS_DATABASE_URL-J3p7Az"},

@@ -9,15 +9,17 @@ export default clerkMiddleware(async (auth, request) => {
 
   if (isPublicRoute(request)) return response
 
+  const rootUrl = process.env.NEXT_PUBLIC_ROOT_URL ?? 'https://gosenku.com'
+
   if (!userId) {
-    const signInUrl = new URL('https://gosenku.com/sign-in')
+    const signInUrl = new URL(`${rootUrl}/sign-in`)
     signInUrl.searchParams.set('redirect_url', request.url)
     return NextResponse.redirect(signInUrl)
   }
 
   const role = (sessionClaims?.publicMetadata as Record<string, string>)?.role
   if (role !== 'business' && role !== 'superadmin' && role !== 'cashier') {
-    return NextResponse.redirect(new URL('https://gosenku.com/hub'))
+    return NextResponse.redirect(new URL(`${rootUrl}/hub`))
   }
 
   return response

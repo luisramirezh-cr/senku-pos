@@ -1,4 +1,4 @@
-const ROOT_API = 'https://gosenku.com/api/internal'
+const ROOT_API = process.env.ROOT_API_URL ?? 'https://gosenku.com/api/internal'
 
 const headers = {
   Authorization: `Bearer ${process.env.INTERNAL_API_SECRET}`,
