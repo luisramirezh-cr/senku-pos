@@ -7,6 +7,7 @@ on:
 
 env:
   AWS_REGION: us-east-1
+  AWS_ACCOUNT_ID: "882788449114"
   ECR_REGISTRY: 882788449114.dkr.ecr.us-east-1.amazonaws.com
   ECR_REPOSITORY: senku-pos
   SERVICE_NAME: senku-pos-dev
@@ -80,13 +81,14 @@ jobs:
           NETWORK_CONFIG='{"subnets":["subnet-07b10b0efdf05464a","subnet-059ab685e838cca98","subnet-00625fd5bbdf5c199","subnet-0771c1a6db9b5ed88","subnet-0c038308f56524136","subnet-09941a6c76592dc4f"],"securityGroups":["sg-076112b2bf2027be3"]}'
           SCALING='{"minTaskCount":1,"maxTaskCount":5,"autoScalingMetric":"AVERAGE_CPU","autoScalingTargetValue":60}'
 
-          # Check if service already exists
-          SERVICE_ARN=$(aws ecs list-services \
-            --cluster "$CLUSTER" \
-            --query "serviceArns[?contains(@, '$SERVICE_NAME')]" \
-            --output text 2>/dev/null || echo "")
+          # Check if ECS Express service already exists
+          SERVICE_ARN="arn:aws:ecs:${{ env.AWS_REGION }}:${{ env.AWS_ACCOUNT_ID }}:service/$CLUSTER/$SERVICE_NAME"
+          STATUS=$(aws ecs describe-express-gateway-service \
+            --service-arn "$SERVICE_ARN" \
+            --query 'service.status.statusCode' \
+            --output text 2>/dev/null || echo "NOT_FOUND")
 
-          if [ -z "$SERVICE_ARN" ]; then
+          if [ "$STATUS" = "NOT_FOUND" ] || [ "$STATUS" = "None" ]; then
             echo "Creating ECS Express service $SERVICE_NAME..."
             aws ecs create-express-gateway-service \
               --service-name "$SERVICE_NAME" \
@@ -100,7 +102,7 @@ jobs:
               --network-configuration "$NETWORK_CONFIG" \
               --scaling-target "$SCALING"
           else
-            echo "Updating ECS Express service $SERVICE_NAME..."
+            echo "Updating ECS Express service $SERVICE_NAME (status: $STATUS)..."
             aws ecs update-express-gateway-service \
               --service-arn "$SERVICE_ARN" \
               --primary-container "$PRIMARY_CONTAINER"
