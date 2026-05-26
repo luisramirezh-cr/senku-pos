@@ -1,35 +1,30 @@
-import type { NextRequest } from "next/server";
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
-import { getClerkHubUrl } from "@/lib/clerk-config";
+import type { NextRequest } from 'next/server'
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { NextResponse } from 'next/server'
 
-const isPublicRoute = createRouteMatcher(["/api/health"]);
+const isPublicRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)', '/api/health'])
 
 export default clerkMiddleware(async (auth, request: NextRequest) => {
-  const { userId, sessionClaims } = await auth();
-  const response = NextResponse.next();
+  if (isPublicRoute(request)) return NextResponse.next()
 
-  if (isPublicRoute(request)) return response;
-
-  const rootUrl = getClerkHubUrl();
+  const { userId, sessionClaims } = await auth()
 
   if (!userId) {
-    const signInUrl = new URL(`${rootUrl}/sign-in`);
-    const returnUrl = `${process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "https://pos-dev.gosenku.com"}${request.nextUrl.pathname}${request.nextUrl.search}`;
-    signInUrl.searchParams.set("redirect_url", returnUrl);
-    return NextResponse.redirect(signInUrl);
+    const signInUrl = new URL('/sign-in', request.url)
+    signInUrl.searchParams.set('redirect_url', request.url)
+    return NextResponse.redirect(signInUrl)
   }
 
-  const role = (sessionClaims?.publicMetadata as Record<string, string>)?.role;
-  if (role !== "business" && role !== "superadmin" && role !== "cashier") {
-    return NextResponse.redirect(new URL(`${rootUrl}/hub`));
+  const role = (sessionClaims?.publicMetadata as Record<string, string>)?.role
+  if (role !== 'business' && role !== 'superadmin' && role !== 'cashier') {
+    return NextResponse.redirect(new URL('/sign-in', request.url))
   }
 
-  return response;
-});
+  return NextResponse.next()
+})
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|css|js|woff2?|ttf|otf)$).*)",
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|css|js|woff2?|ttf|otf)$).*)',
   ],
-};
+}

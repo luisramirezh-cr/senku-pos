@@ -42,10 +42,7 @@ jobs:
           IMAGE="${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${IMAGE_TAG}"
           docker build -f apps/pos/Dockerfile \
             --build-arg NEXT_PUBLIC_APP_URL=https://pos.gosenku.com \
-            --build-arg NEXT_PUBLIC_CLERK_DOMAIN=pos.gosenku.com \
             --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }} \
-            --build-arg NEXT_PUBLIC_CLERK_SIGN_IN_URL=https://gosenku.com/sign-in \
-            --build-arg NEXT_PUBLIC_CLERK_SIGN_UP_URL=https://gosenku.com/sign-up \
             --build-arg NEXT_PUBLIC_ROOT_URL=https://gosenku.com \
             -t "$IMAGE" \
             -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest \
