@@ -15,6 +15,7 @@ interface Props {
   items: CartItem[]
   subtotal: number
   businessId: string
+  counter?: string
   onSuccess: () => void
   onClose: () => void
 }
@@ -25,7 +26,7 @@ const METHODS: { key: PaymentMethod; label: string; emoji: string }[] = [
   { key: 'sinpe', label: 'SINPE', emoji: '📱' },
 ]
 
-export function CobrarModal({ items, subtotal, businessId, onSuccess, onClose }: Props) {
+export function CobrarModal({ items, subtotal, businessId, counter: _counter, onSuccess, onClose }: Props) {
   const { taxRate, taxName, fiscalEnabled } = useBusinessSettings()
 
   const [step, setStep] = useState<Step>('customer')

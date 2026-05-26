@@ -2,15 +2,19 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { usePosSession } from '@/context/pos-session-context'
-import type { Order, OrderItem } from '@/db/schema'
+import { useBusinessSettings } from '@/context/business-settings-context'
+import type { Order, OrderItem, OrderItemModifier } from '@/db/schema'
 import { KdsCard } from './_components/KdsCard'
 
-type OrderWithItems = Order & { items: OrderItem[] }
+type ItemWithModifiers = OrderItem & { modifiers: OrderItemModifier[] }
+type OrderWithItems = Order & { items: ItemWithModifiers[] }
 
 export default function KdsPage() {
   const { activeBusiness } = usePosSession()
+  const { hasTableManagement } = useBusinessSettings()
   const [orders, setOrders] = useState<OrderWithItems[]>([])
   const [lastRefresh, setLastRefresh] = useState(new Date())
+  const [activeCounter, setActiveCounter] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     if (!activeBusiness?.id) return
@@ -41,6 +45,15 @@ export default function KdsPage() {
     await load()
   }
 
+  // Counter tabs — only in food court (no table management) mode
+  const counters = !hasTableManagement
+    ? [...new Set(orders.map((o) => o.counter).filter(Boolean))] as string[]
+    : []
+
+  const visible = activeCounter
+    ? orders.filter((o) => o.counter === activeCounter)
+    : orders
+
   return (
     <div className="min-h-[calc(100vh-3.5rem)] bg-gray-100 p-4">
       <div className="mb-4 flex items-center justify-between">
@@ -50,13 +63,38 @@ export default function KdsPage() {
         </span>
       </div>
 
-      {orders.length === 0 ? (
+      {/* Counter filter tabs — food court mode only */}
+      {counters.length > 0 && (
+        <div className="mb-4 flex gap-2 overflow-x-auto">
+          <button
+            onClick={() => setActiveCounter(null)}
+            className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+              !activeCounter ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            Todos ({orders.length})
+          </button>
+          {counters.map((c) => (
+            <button
+              key={c}
+              onClick={() => setActiveCounter(c)}
+              className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                activeCounter === c ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              {c} ({orders.filter((o) => o.counter === c).length})
+            </button>
+          ))}
+        </div>
+      )}
+
+      {visible.length === 0 ? (
         <div className="flex h-64 items-center justify-center">
           <p className="text-gray-400">Sin pedidos pendientes</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {orders.map((order) => (
+          {visible.map((order) => (
             <KdsCard
               key={order.id}
               order={order}

@@ -4,9 +4,19 @@ import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatCRC } from '@/lib/format'
 import { usePosSession } from '@/context/pos-session-context'
-import type { Product, Order, OrderItem } from '@/db/schema'
+import type { Product, Order, OrderItem, OrderItemModifier } from '@/db/schema'
+import { ModifierPicker } from './_components/ModifierPicker'
 
-type OrderWithItems = Order & { items: OrderItem[] }
+type ItemWithModifiers = OrderItem & { modifiers: OrderItemModifier[] }
+type OrderWithItems = Order & { items: ItemWithModifiers[] }
+
+interface ModifierGroup {
+  id: string
+  name: string
+  required: boolean
+  multiSelect: boolean
+  options: { id: string; name: string; priceDelta: string }[]
+}
 
 const CHANNEL_LABEL: Record<string, string> = {
   DINE_IN: 'Mesa',
@@ -22,14 +32,15 @@ export default function OrderEntryPage({ params }: { params: Promise<{ orderId: 
   const [products, setProducts] = useState<Product[]>([])
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
+  const [pendingProduct, setPendingProduct] = useState<Product | null>(null)
+  const [pendingModifiers, setPendingModifiers] = useState<ModifierGroup[]>([])
 
   async function loadOrder() {
     if (!activeBusiness?.id) return
     const res = await fetch(`/api/orders?businessId=${activeBusiness.id}&status=open`)
     if (res.ok) {
       const all = await res.json() as OrderWithItems[]
-      const found = all.find((o) => o.id === orderId) ?? null
-      setOrder(found)
+      setOrder(all.find((o) => o.id === orderId) ?? null)
     }
   }
 
@@ -42,13 +53,30 @@ export default function OrderEntryPage({ params }: { params: Promise<{ orderId: 
   }, [activeBusiness?.id, orderId])
 
   const categories = [...new Set(products.map((p) => p.category).filter(Boolean))] as string[]
-  const filtered = activeCategory ? products.filter((p) => p.category === activeCategory) : products.filter((p) => p.isActive)
+  const filtered = activeCategory
+    ? products.filter((p) => p.category === activeCategory)
+    : products.filter((p) => p.isActive)
 
-  async function addItem(product: Product) {
+  async function handleProductTap(product: Product) {
+    const res = await fetch(`/api/modifiers/product?productId=${product.id}`)
+    const groups: ModifierGroup[] = res.ok ? await res.json() : []
+    if (groups.length > 0) {
+      setPendingProduct(product)
+      setPendingModifiers(groups)
+    } else {
+      await addItem(product, [], '')
+    }
+  }
+
+  async function addItem(
+    product: Product,
+    modifiers: { groupName: string; optionName: string; priceDelta: string }[],
+    notes: string,
+  ) {
     await fetch(`/api/orders/${orderId}/items`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ productId: product.id, quantity: 1 }),
+      body: JSON.stringify({ productId: product.id, quantity: 1, modifiers, notes: notes || null }),
     })
     await loadOrder()
   }
@@ -92,7 +120,6 @@ export default function OrderEntryPage({ params }: { params: Promise<{ orderId: 
           <div className="w-16" />
         </div>
 
-        {/* Category tabs */}
         <div className="flex gap-2 overflow-x-auto p-3">
           <button
             onClick={() => setActiveCategory(null)}
@@ -115,13 +142,12 @@ export default function OrderEntryPage({ params }: { params: Promise<{ orderId: 
           ))}
         </div>
 
-        {/* Product grid */}
         <div className="flex-1 overflow-y-auto p-3">
           <div className="grid grid-cols-3 gap-2">
             {filtered.map((product) => (
               <button
                 key={product.id}
-                onClick={() => void addItem(product)}
+                onClick={() => void handleProductTap(product)}
                 className="rounded-xl bg-brand-navy p-3 text-left transition hover:bg-brand-navy/80 active:scale-95"
               >
                 <p className="mb-1 text-xs font-semibold leading-snug text-brand-surface">{product.name}</p>
@@ -143,25 +169,35 @@ export default function OrderEntryPage({ params }: { params: Promise<{ orderId: 
           ) : (
             <div className="space-y-2">
               {order.items.map((item) => (
-                <div key={item.id} className="flex items-start justify-between gap-2 rounded-lg bg-brand-dark/30 p-2.5">
-                  <div className="flex-1">
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-xs font-bold text-brand-teal">{item.quantity}×</span>
-                      <span className="text-xs font-semibold text-brand-surface">{item.name}</span>
+                <div key={item.id} className="rounded-lg bg-brand-dark/30 p-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-xs font-bold text-brand-teal">{item.quantity}×</span>
+                        <span className="text-xs font-semibold text-brand-surface">{item.name}</span>
+                      </div>
+                      {item.modifiers?.map((m, i) => (
+                        <p key={i} className="text-[10px] text-brand-surface/50">
+                          {m.groupName}: {m.optionName}
+                          {parseFloat(m.priceDelta) !== 0 && (
+                            <span className="ml-1 text-brand-teal">+{formatCRC(parseFloat(m.priceDelta))}</span>
+                          )}
+                        </p>
+                      ))}
+                      {item.notes && (
+                        <p className="text-[10px] italic text-brand-surface/40">{item.notes}</p>
+                      )}
+                      <p className="font-mono text-[10px] text-brand-surface/40">
+                        {formatCRC(parseFloat(item.unitPrice))}
+                      </p>
                     </div>
-                    {item.notes && (
-                      <p className="text-[10px] italic text-brand-surface/40">{item.notes}</p>
-                    )}
-                    <p className="font-mono text-[10px] text-brand-surface/40">
-                      {formatCRC(parseFloat(item.unitPrice))}
-                    </p>
+                    <button
+                      onClick={() => void removeItem(item.id)}
+                      className="text-base leading-none text-brand-surface/20 hover:text-red-400"
+                    >
+                      ×
+                    </button>
                   </div>
-                  <button
-                    onClick={() => void removeItem(item.id)}
-                    className="text-base leading-none text-brand-surface/20 hover:text-red-400"
-                  >
-                    ×
-                  </button>
                 </div>
               ))}
             </div>
@@ -182,6 +218,23 @@ export default function OrderEntryPage({ params }: { params: Promise<{ orderId: 
           </button>
         </div>
       </div>
+
+      {pendingProduct && (
+        <ModifierPicker
+          productName={pendingProduct.name}
+          productPrice={parseFloat(pendingProduct.price)}
+          groups={pendingModifiers}
+          onConfirm={(modifiers, notes) => {
+            void addItem(pendingProduct, modifiers, notes)
+            setPendingProduct(null)
+            setPendingModifiers([])
+          }}
+          onClose={() => {
+            setPendingProduct(null)
+            setPendingModifiers([])
+          }}
+        />
+      )}
     </div>
   )
 }

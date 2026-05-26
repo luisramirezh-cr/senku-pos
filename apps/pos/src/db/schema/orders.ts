@@ -9,6 +9,7 @@ export const orders = pgTable('orders', {
   waiterId:   text('waiter_id').notNull(),
   status:     text('status').notNull().default('open'), // 'open' | 'sent_to_kitchen' | 'preparing' | 'ready' | 'paid' | 'cancelled'
   total:      numeric('total', { precision: 10, scale: 2 }).notNull().default('0'),
+  counter:    text('counter'),
   notes:      text('notes'),
   openedAt:   timestamp('opened_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt:  timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
