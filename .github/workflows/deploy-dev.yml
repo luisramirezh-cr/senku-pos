@@ -35,6 +35,13 @@ jobs:
       - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Load Clerk publishable key from AWS
+        run: |
+          PK=$(aws secretsmanager get-secret-value \
+            --secret-id senku/dev/CLERK_PUBLISHABLE_KEY \
+            --query SecretString --output text)
+          echo "CLERK_PUBLISHABLE_KEY=$PK" >> "$GITHUB_ENV"
+
       - name: Build and push image
         id: build
         run: |
@@ -42,7 +49,8 @@ jobs:
           IMAGE="${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:dev-${IMAGE_TAG}"
           docker build -f apps/pos/Dockerfile \
             --build-arg NEXT_PUBLIC_APP_URL=https://pos-dev.gosenku.com \
-            --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }} \
+            --build-arg NEXT_PUBLIC_CLERK_DOMAIN=pos-dev.gosenku.com \
+            --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$CLERK_PUBLISHABLE_KEY \
             --build-arg NEXT_PUBLIC_CLERK_SIGN_IN_URL=https://root-dev.gosenku.com/sign-in \
             --build-arg NEXT_PUBLIC_CLERK_SIGN_UP_URL=https://root-dev.gosenku.com/sign-up \
             --build-arg NEXT_PUBLIC_ROOT_URL=https://root-dev.gosenku.com \
@@ -107,3 +115,11 @@ jobs:
               --service-arn "$SERVICE_ARN" \
               --primary-container "$PRIMARY_CONTAINER"
           fi
+
+      - name: Sync pos-dev ALB custom domain rule
+        run: |
+          git clone --depth 1 https://github.com/luisramirezh-cr/senku-root.git /tmp/senku-root
+          ECS_SERVICE=senku-pos-dev \
+          CUSTOM_DOMAIN_HOSTS=pos-dev.gosenku.com \
+          CUSTOM_RULE_PRIORITY=26 \
+          bash /tmp/senku-root/scripts/sync-alb-custom-domain.sh
