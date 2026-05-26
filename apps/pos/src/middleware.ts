@@ -16,7 +16,8 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
 
   if (!userId) {
     const signInUrl = new URL(`${rootUrl}/sign-in`);
-    signInUrl.searchParams.set("redirect_url", getPublicRequestUrl(request));
+    const returnUrl = `${process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "https://pos-dev.gosenku.com"}${request.nextUrl.pathname}${request.nextUrl.search}`;
+    signInUrl.searchParams.set("redirect_url", returnUrl);
     return NextResponse.redirect(signInUrl);
   }
 
