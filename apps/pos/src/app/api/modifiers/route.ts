@@ -2,7 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { eq } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db'
-import { modifierGroups, modifierOptions, productModifierGroups } from '@/db/schema'
+import { modifierGroups, modifierOptions } from '@/db/schema'
 import { assertBusinessAccess } from '@/lib/api-auth'
 
 export async function GET(req: NextRequest) {
