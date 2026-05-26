@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { getClerkHubUrl } from "@/lib/clerk-config";
@@ -5,7 +6,7 @@ import { getPublicRequestUrl } from "@/lib/public-url";
 
 const isPublicRoute = createRouteMatcher(["/api/health"]);
 
-export default clerkMiddleware(async (auth, request) => {
+export default clerkMiddleware(async (auth, request: NextRequest) => {
   const { userId, sessionClaims } = await auth();
   const response = NextResponse.next();
 
