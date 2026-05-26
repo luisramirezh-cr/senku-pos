@@ -118,8 +118,21 @@ jobs:
 
       - name: Sync pos-dev ALB custom domain rule
         run: |
-          git clone --depth 1 https://github.com/luisramirezh-cr/senku-root.git /tmp/senku-root
-          ECS_SERVICE=senku-pos-dev \
-          CUSTOM_DOMAIN_HOSTS=pos-dev.gosenku.com \
-          CUSTOM_RULE_PRIORITY=26 \
-          bash /tmp/senku-root/scripts/sync-alb-custom-domain.sh
+          LISTENER_ARN="arn:aws:elasticloadbalancing:us-east-1:882788449114:listener/app/ecs-express-gateway-alb-73cb1575/26fea48a232f6b7c/202025336b6a7a96"
+          CUSTOM_RULE_ARN="arn:aws:elasticloadbalancing:us-east-1:882788449114:listener-rule/app/ecs-express-gateway-alb-73cb1575/26fea48a232f6b7c/202025336b6a7a96/1155ab14faefc897"
+          ECS_ENDPOINT="se-930735833a2147159cee9a09fb4997b3.ecs.us-east-1.on.aws"
+
+          # Get TG weights from the rule ECS Express manages for this service
+          TGS=$(aws elbv2 describe-rules \
+            --listener-arn "$LISTENER_ARN" \
+            --query "Rules[?Conditions[?contains(Values,'$ECS_ENDPOINT')]].Actions[0].ForwardConfig.TargetGroups" \
+            --output json | python3 -c "import sys,json; rules=json.load(sys.stdin); print(json.dumps(rules[0]))" 2>/dev/null || echo "")
+
+          if [ -n "$TGS" ] && [ "$TGS" != "null" ]; then
+            echo "Syncing custom domain rule TGs: $TGS"
+            aws elbv2 modify-rule \
+              --rule-arn "$CUSTOM_RULE_ARN" \
+              --actions "[{\"Type\":\"forward\",\"ForwardConfig\":{\"TargetGroups\":$TGS}}]"
+          else
+            echo "Could not find ECS-managed rule for $ECS_ENDPOINT — skipping sync"
+          fi
