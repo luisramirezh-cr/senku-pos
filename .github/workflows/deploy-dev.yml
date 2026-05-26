@@ -73,6 +73,9 @@ jobs:
             "containerPort": 8080,
             "environment": [
               {"name": "NODE_ENV", "value": "production"},
+              {"name": "APP_URL", "value": "https://pos-dev.gosenku.com"},
+              {"name": "NEXT_PUBLIC_APP_URL", "value": "https://pos-dev.gosenku.com"},
+              {"name": "NEXT_PUBLIC_ROOT_URL", "value": "https://root-dev.gosenku.com"},
               {"name": "ROOT_API_URL", "value": "https://root-dev.gosenku.com/api/internal"}
             ],
             "secrets": [
