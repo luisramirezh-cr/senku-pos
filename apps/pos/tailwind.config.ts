@@ -6,16 +6,16 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          dark:    '#080D1A',
-          navy:    '#0F1A35',
-          teal:    '#06B6D4',
-          amber:   '#F0ABFC',
-          blue:    '#8B5CF6',
-          surface: '#F0F9FF',
+          dark:    '#0F1F35',
+          navy:    '#1A3355',
+          teal:    '#0D9488',
+          amber:   '#F59E0B',
+          blue:    '#2563EB',
+          surface: '#F8FAFC',
         },
       },
       fontFamily: {
-        sans: ['DM Sans', 'sans-serif'],
+        sans: ['Plus Jakarta Sans', 'sans-serif'],
         mono: ['DM Mono', 'monospace'],
       },
     },

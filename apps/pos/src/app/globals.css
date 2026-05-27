@@ -2,10 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=DM+Mono:wght@400;500&display=swap');
 
 .dot-grid {
-  background-image: radial-gradient(circle, #06B6D4 1px, transparent 1px);
+  background-image: radial-gradient(circle, #0D9488 1px, transparent 1px);
   background-size: 36px 36px;
 }
 
@@ -27,19 +27,19 @@
 .glow-pulse { animation: glowPulse 2.8s ease-in-out infinite; }
 
 :root {
-  --brand-dark:    #080D1A;
-  --brand-navy:    #0F1A35;
-  --brand-teal:    #06B6D4;
-  --brand-amber:   #F0ABFC;
-  --brand-blue:    #8B5CF6;
-  --brand-surface: #F0F9FF;
+  --brand-dark:    #0F1F35;
+  --brand-navy:    #1A3355;
+  --brand-teal:    #0D9488;
+  --brand-amber:   #F59E0B;
+  --brand-blue:    #2563EB;
+  --brand-surface: #F8FAFC;
 }
 
 html,
 body {
   background-color: var(--brand-dark);
   color: var(--brand-surface);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 @media print {

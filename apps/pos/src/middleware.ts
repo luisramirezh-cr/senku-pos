@@ -11,7 +11,11 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
 
   if (!userId) {
     const signInUrl = new URL('/sign-in', request.url)
-    signInUrl.searchParams.set('redirect_url', request.url)
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '')
+    const returnUrl = appUrl
+      ? `${appUrl}${request.nextUrl.pathname}${request.nextUrl.search}`
+      : request.url
+    signInUrl.searchParams.set('redirect_url', returnUrl)
     return NextResponse.redirect(signInUrl)
   }
 

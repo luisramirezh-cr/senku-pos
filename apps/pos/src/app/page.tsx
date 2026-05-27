@@ -1,10 +1,17 @@
-import { auth } from '@clerk/nextjs/server'
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useAuth } from '@clerk/nextjs'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import Link from 'next/link'
 
-export default async function LandingPage() {
-  const { userId } = await auth()
-  if (userId) redirect('/pos')
+export default function LandingPage() {
+  const { isLoaded, isSignedIn } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn) router.replace('/pos')
+  }, [isLoaded, isSignedIn, router])
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-brand-dark">
@@ -13,11 +20,10 @@ export default async function LandingPage() {
       <div className="dot-grid pointer-events-none absolute inset-0 opacity-[0.032]" />
       <div className="pointer-events-none absolute -right-40 -top-40 h-[700px] w-[700px] rounded-full bg-brand-teal/[0.07] blur-[160px]" />
       <div className="pointer-events-none absolute -bottom-60 -left-40 h-[600px] w-[600px] rounded-full bg-brand-blue/[0.07] blur-[140px]" />
-      {/* thin diagonal accent line */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.03]"
+        className="pointer-events-none absolute inset-0 opacity-[0.025]"
         style={{
-          backgroundImage: 'repeating-linear-gradient(135deg, #06B6D4 0px, #06B6D4 1px, transparent 1px, transparent 60px)',
+          backgroundImage: 'repeating-linear-gradient(135deg, #0D9488 0px, #0D9488 1px, transparent 1px, transparent 60px)',
         }}
       />
 
@@ -45,7 +51,8 @@ export default async function LandingPage() {
             Sistema de punto de venta
           </p>
 
-          <h1 className="anim-3 mb-7 font-sans text-[clamp(3rem,9vw,6.5rem)] font-bold leading-[1.02] tracking-[-0.02em] text-brand-surface">
+          <h1 className="anim-3 mb-7 font-sans font-bold leading-[1.02] tracking-[-0.02em] text-brand-surface"
+            style={{ fontSize: 'clamp(3rem, 9vw, 6.5rem)' }}>
             Para negocios<br />
             <span className="text-brand-teal">que no</span><br />
             esperan.
@@ -56,7 +63,7 @@ export default async function LandingPage() {
             todo desde una sola pantalla.
           </p>
 
-          <div className="anim-5 flex items-center gap-4">
+          <div className="anim-5">
             <Link
               href="/sign-in"
               className="group inline-flex items-center gap-3 rounded-xl bg-brand-teal px-8 py-4 text-[13px] font-bold tracking-wide text-brand-dark transition hover:bg-brand-teal/90 active:scale-[0.98]"
